@@ -1,283 +1,226 @@
+
 "use client"
 
 import React, { useState } from "react"
 import { useReportRenderer } from "../hooks/useSSRS"
 import type { RenderFormat } from "../types/api"
+import { Download, FileText, AlertCircle } from "lucide-react"
 
 interface ReportViewerProps {
   reportPath: string | null
   parameters: Record<string, any>
 }
 
+const formatOptions: { value: RenderFormat; label: string; icon: string }[] = [
+  { value: "PDF", label: "PDF Document", icon: "📄" },
+  { value: "EXCEL", label: "Excel Spreadsheet", icon: "📊" },
+  { value: "WORD", label: "Word Document", icon: "📝" },
+  { value: "CSV", label: "CSV Data", icon: "📋" },
+  { value: "XML", label: "XML Data", icon: "🔖" },
+  { value: "IMAGE", label: "Image (PNG)", icon: "🖼️" },
+]
+
 export const ReportViewer: React.FC<ReportViewerProps> = ({ reportPath, parameters }) => {
-  const { isRendering, error, renderReport, downloadReport } = useReportRenderer()
   const [selectedFormat, setSelectedFormat] = useState<RenderFormat>("PDF")
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-
-  const formats: { value: RenderFormat; label: string }[] = [
-    { value: "PDF", label: "PDF" },
-    { value: "EXCEL", label: "Excel" },
-    { value: "WORD", label: "Word" },
-    { value: "CSV", label: "CSV" },
-    { value: "XML", label: "XML" },
-    { value: "IMAGE", label: "Image" },
-  ]
-
-  const handlePreview = async () => {
-    if (!reportPath) return
-
-    try {
-      const blob = await renderReport(reportPath, parameters, selectedFormat)
-      if (blob) {
-        // Clean up previous URL
-        if (previewUrl) {
-          URL.revokeObjectURL(previewUrl)
-        }
-
-        const url = URL.createObjectURL(blob)
-        setPreviewUrl(url)
-      }
-    } catch (err) {
-      console.error("Preview failed:", err)
-    }
-  }
+  const { downloadReport, isRendering, error } = useReportRenderer()
 
   const handleDownload = async () => {
     if (!reportPath) return
-
-    try {
-      await downloadReport(reportPath, parameters, selectedFormat)
-    } catch (err) {
-      console.error("Download failed:", err)
-    }
-  }
-
-  React.useEffect(() => {
-    // Clean up URL when component unmounts
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl)
-      }
-    }
-  }, [previewUrl])
-
-  if (!reportPath) {
-    return (
-      <div
-        style={{
-          padding: "40px",
-          textAlign: "center",
-          color: "#6b7280",
-          backgroundColor: "white",
-          border: "1px solid #e2e8f0",
-          borderRadius: "8px",
-        }}
-      >
-        <div style={{ fontSize: "48px", marginBottom: "16px" }}>🎯</div>
-        <h3 style={{ margin: "0 0 8px 0", color: "#374151" }}>Ready to Generate</h3>
-        <p style={{ margin: 0 }}>Configure parameters and click "Preview" or "Download" to generate your report.</p>
-      </div>
-    )
+    await downloadReport(reportPath, parameters, selectedFormat)
   }
 
   return (
-    <div
-      style={{
-        backgroundColor: "white",
-        border: "1px solid #e2e8f0",
-        borderRadius: "8px",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "16px",
-          borderBottom: "1px solid #e2e8f0",
-          backgroundColor: "#f8fafc",
-        }}
-      >
-        <h3 style={{ margin: "0 0 16px 0", fontSize: "16px", fontWeight: "600", color: "#1f2937" }}>Report Output</h3>
+    <div className="professional-card" style={{ overflow: "hidden" }}>
+      <div style={{ padding: "20px" }}>
+        <h2
+          style={{
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#0f172a",
+            marginBottom: "16px",
+            display: "flex",
+            alignItems: "center",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          <FileText style={{ marginRight: "8px", height: "18px", width: "18px", color: "#64748b" }} />
+          Report Viewer
+        </h2>
 
-        <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <label style={{ fontSize: "14px", fontWeight: "500", color: "#374151" }}>Format:</label>
-            <select
-              value={selectedFormat}
-              onChange={(e) => setSelectedFormat(e.target.value as RenderFormat)}
-              style={{
-                padding: "6px 12px",
-                border: "1px solid #d1d5db",
-                borderRadius: "4px",
-                fontSize: "14px",
-                backgroundColor: "white",
-              }}
-            >
-              {formats.map((format) => (
-                <option key={format.value} value={format.value}>
-                  {format.label}
-                </option>
-              ))}
-            </select>
+        {!reportPath ? (
+          <div style={{ 
+            textAlign: "center", 
+            padding: "40px 20px",
+            color: "#64748b",
+            fontSize: "14px"
+          }}>
+            <FileText style={{ 
+              marginBottom: "12px", 
+              height: "32px", 
+              width: "32px", 
+              color: "#94a3b8",
+              margin: "0 auto 12px"
+            }} />
+            <p>Select a report to view and download</p>
           </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            {/* Format Selection */}
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "13px",
+                  fontWeight: "500",
+                  color: "#374151",
+                  marginBottom: "8px",
+                }}
+              >
+                Export Format
+              </label>
+              <div style={{ 
+                display: "grid", 
+                gridTemplateColumns: "1fr 1fr", 
+                gap: "8px" 
+              }}>
+                {formatOptions.map((format) => (
+                  <button
+                    key={format.value}
+                    onClick={() => setSelectedFormat(format.value)}
+                    style={{
+                      padding: "10px 12px",
+                      borderRadius: "6px",
+                      border: selectedFormat === format.value 
+                        ? "2px solid #0ea5e9" 
+                        : "1px solid #d1d5db",
+                      backgroundColor: selectedFormat === format.value
+                        ? "#f0f9ff"
+                        : "#ffffff",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      fontSize: "13px",
+                      fontWeight: "400",
+                      color: selectedFormat === format.value ? "#0ea5e9" : "#374151",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedFormat !== format.value) {
+                        e.currentTarget.style.backgroundColor = "#f8fafc"
+                        e.currentTarget.style.borderColor = "#94a3b8"
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedFormat !== format.value) {
+                        e.currentTarget.style.backgroundColor = "#ffffff"
+                        e.currentTarget.style.borderColor = "#d1d5db"
+                      }
+                    }}
+                  >
+                    <span style={{ fontSize: "14px" }}>{format.icon}</span>
+                    {format.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button
-              onClick={handlePreview}
-              disabled={isRendering}
-              style={{
-                padding: "8px 16px",
-                backgroundColor: "#3b82f6",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: isRendering ? "not-allowed" : "pointer",
-                fontSize: "14px",
-                fontWeight: "500",
-                opacity: isRendering ? 0.6 : 1,
-              }}
-            >
-              {isRendering ? "Generating..." : "Preview"}
-            </button>
-
-            <button
-              onClick={handleDownload}
-              disabled={isRendering}
-              style={{
-                padding: "8px 16px",
-                backgroundColor: "#10b981",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: isRendering ? "not-allowed" : "pointer",
-                fontSize: "14px",
-                fontWeight: "500",
-                opacity: isRendering ? 0.6 : 1,
-              }}
-            >
-              {isRendering ? "Generating..." : "Download"}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div style={{ flex: 1, overflow: "auto", padding: "16px" }}>
-        {error && (
-          <div
-            style={{
-              padding: "16px",
-              backgroundColor: "#fef2f2",
-              color: "#dc2626",
-              borderRadius: "4px",
-              marginBottom: "16px",
-            }}
-          >
-            Error: {error}
-          </div>
-        )}
-
-        {isRendering && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "200px",
-              flexDirection: "column",
-              gap: "16px",
-            }}
-          >
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                border: "4px solid #e5e7eb",
-                borderTop: "4px solid #3b82f6",
-                borderRadius: "50%",
-                animation: "spin 1s linear infinite",
-              }}
-            />
-            <p style={{ color: "#6b7280", margin: 0 }}>Generating report...</p>
-          </div>
-        )}
-
-        {previewUrl && selectedFormat === "PDF" && (
-          <iframe
-            src={previewUrl}
-            style={{
-              width: "100%",
-              height: "600px",
-              border: "1px solid #e5e7eb",
-              borderRadius: "4px",
-            }}
-            title="Report Preview"
-          />
-        )}
-
-        {previewUrl && selectedFormat === "IMAGE" && (
-          <img
-            src={previewUrl || "/placeholder.svg"}
-            alt="Report Preview"
-            style={{
-              maxWidth: "100%",
-              height: "auto",
-              border: "1px solid #e5e7eb",
-              borderRadius: "4px",
-            }}
-          />
-        )}
-
-        {previewUrl && !["PDF", "IMAGE"].includes(selectedFormat) && (
-          <div
-            style={{
-              padding: "40px",
-              textAlign: "center",
-              backgroundColor: "#f9fafb",
-              borderRadius: "4px",
-              border: "1px solid #e5e7eb",
-            }}
-          >
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}>📄</div>
-            <h4 style={{ margin: "0 0 8px 0", color: "#374151" }}>Report Generated</h4>
-            <p style={{ margin: "0 0 16px 0", color: "#6b7280" }}>
-              {selectedFormat} files cannot be previewed in the browser.
-            </p>
+            {/* Download Button */}
             <button
               onClick={handleDownload}
+              disabled={isRendering}
               style={{
-                padding: "8px 16px",
-                backgroundColor: "#10b981",
-                color: "white",
+                padding: "12px 20px",
+                borderRadius: "6px",
                 border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
+                background: isRendering ? "#94a3b8" : "#0ea5e9",
+                color: "white",
                 fontSize: "14px",
                 fontWeight: "500",
+                cursor: isRendering ? "not-allowed" : "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+              }}
+              onMouseEnter={(e) => {
+                if (!isRendering) {
+                  e.currentTarget.style.backgroundColor = "#0284c7"
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isRendering) {
+                  e.currentTarget.style.backgroundColor = "#0ea5e9"
+                }
               }}
             >
-              Download File
+              {isRendering ? (
+                <>
+                  <div
+                    style={{
+                      width: "14px",
+                      height: "14px",
+                      border: "2px solid rgba(255, 255, 255, 0.3)",
+                      borderTop: "2px solid white",
+                      borderRadius: "50%",
+                      animation: "spin 1s linear infinite",
+                    }}
+                  />
+                  Generating Report...
+                </>
+              ) : (
+                <>
+                  <Download style={{ height: "16px", width: "16px" }} />
+                  Download {selectedFormat} Report
+                </>
+              )}
             </button>
-          </div>
-        )}
 
-        {!previewUrl && !isRendering && !error && (
-          <div
-            style={{
-              padding: "40px",
-              textAlign: "center",
-              color: "#6b7280",
-              backgroundColor: "#f9fafb",
-              borderRadius: "4px",
-            }}
-          >
-            <div style={{ fontSize: "48px", marginBottom: "16px" }}>📋</div>
-            <h4 style={{ margin: "0 0 8px 0", color: "#374151" }}>No Preview Available</h4>
-            <p style={{ margin: 0 }}>
-              Click "Preview" to generate and view the report, or "Download" to save it directly.
-            </p>
+            {/* Error Display */}
+            {error && (
+              <div style={{ 
+                padding: "12px",
+                backgroundColor: "#fef2f2",
+                border: "1px solid #fecaca",
+                borderRadius: "6px",
+                color: "#dc2626",
+                fontSize: "14px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }}>
+                <AlertCircle style={{ height: "16px", width: "16px", flexShrink: 0 }} />
+                {error}
+              </div>
+            )}
+
+            {/* Current Parameters Display */}
+            {Object.keys(parameters).length > 0 && (
+              <div style={{
+                padding: "12px",
+                backgroundColor: "#f0f9ff",
+                border: "1px solid #e0f2fe",
+                borderRadius: "6px",
+              }}>
+                <h4 style={{ 
+                  fontSize: "13px", 
+                  fontWeight: "500", 
+                  color: "#374151", 
+                  marginBottom: "8px" 
+                }}>
+                  Current Parameters:
+                </h4>
+                <div style={{ fontSize: "12px", color: "#64748b" }}>
+                  {Object.entries(parameters).map(([key, value]) => (
+                    <div key={key} style={{ marginBottom: "4px" }}>
+                      <strong>{key}:</strong> {String(value)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

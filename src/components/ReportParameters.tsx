@@ -1,247 +1,140 @@
+
 "use client"
 
 import React from "react"
 import { useReportParameters } from "../hooks/useSSRS"
 import type { ReportParameter } from "../types/api"
+import { Settings, AlertCircle } from "lucide-react"
 
 interface ReportParametersProps {
   reportPath: string | null
   onParametersChange: (parameters: Record<string, any>) => void
 }
 
-export const ReportParameters: React.FC<ReportParametersProps> = ({ reportPath, onParametersChange }) => {
-  const { parameters, parameterValues, isLoading, error, updateParameterValue, resetParameters } =
-    useReportParameters(reportPath)
+export const ReportParameters: React.FC<ReportParametersProps> = ({ 
+  reportPath, 
+  onParametersChange 
+}) => {
+  const { parameters, isLoading, error } = useReportParameters(reportPath)
 
-  React.useEffect(() => {
-    onParametersChange(parameterValues)
-  }, [parameterValues, onParametersChange])
-
-  const renderParameterInput = (param: ReportParameter) => {
-    const value = parameterValues[param.name] || ""
-
-    const inputStyle = {
-      width: "100%",
-      padding: "8px 12px",
-      border: "1px solid #d1d5db",
-      borderRadius: "4px",
-      fontSize: "14px",
-      backgroundColor: "white",
-    }
-
-    switch (param.type) {
-      case "Boolean":
-        return (
-          <select
-            value={value.toString()}
-            onChange={(e) => updateParameterValue(param.name, e.target.value === "true")}
-            style={inputStyle}
-          >
-            <option value="">Select...</option>
-            <option value="true">True</option>
-            <option value="false">False</option>
-          </select>
-        )
-
-      case "DateTime":
-        return (
-          <input
-            type="datetime-local"
-            value={value ? new Date(value).toISOString().slice(0, 16) : ""}
-            onChange={(e) => updateParameterValue(param.name, e.target.value ? new Date(e.target.value) : "")}
-            style={inputStyle}
-          />
-        )
-
-      case "Integer":
-        return (
-          <input
-            type="number"
-            value={value}
-            onChange={(e) => updateParameterValue(param.name, Number.parseInt(e.target.value) || "")}
-            style={inputStyle}
-          />
-        )
-
-      case "Float":
-        return (
-          <input
-            type="number"
-            step="0.01"
-            value={value}
-            onChange={(e) => updateParameterValue(param.name, Number.parseFloat(e.target.value) || "")}
-            style={inputStyle}
-          />
-        )
-
-      default:
-        if (param.validValues && param.validValues.length > 0) {
-          if (param.multiValue) {
-            return (
-              <select
-                multiple
-                value={Array.isArray(value) ? value : []}
-                onChange={(e) => {
-                  const selectedValues = Array.from(e.target.selectedOptions, (option) => option.value)
-                  updateParameterValue(param.name, selectedValues)
-                }}
-                style={{ ...inputStyle, height: "120px" }}
-              >
-                {param.validValues.map((validValue) => (
-                  <option key={validValue} value={validValue}>
-                    {validValue}
-                  </option>
-                ))}
-              </select>
-            )
-          } else {
-            return (
-              <select
-                value={value}
-                onChange={(e) => updateParameterValue(param.name, e.target.value)}
-                style={inputStyle}
-              >
-                <option value="">Select...</option>
-                {param.validValues.map((validValue) => (
-                  <option key={validValue} value={validValue}>
-                    {validValue}
-                  </option>
-                ))}
-              </select>
-            )
-          }
-        }
-
-        return (
-          <input
-            type="text"
-            value={value}
-            onChange={(e) => updateParameterValue(param.name, e.target.value)}
-            style={inputStyle}
-          />
-        )
-    }
-  }
-
-  if (!reportPath) {
-    return (
-      <div
-        style={{
-          padding: "40px",
-          textAlign: "center",
-          color: "#6b7280",
-          backgroundColor: "white",
-          border: "1px solid #e2e8f0",
-          borderRadius: "8px",
-        }}
-      >
-        <div style={{ fontSize: "48px", marginBottom: "16px" }}>📊</div>
-        <h3 style={{ margin: "0 0 8px 0", color: "#374151" }}>Select a Report</h3>
-        <p style={{ margin: 0 }}>Choose a report from the browser to view its parameters and generate output.</p>
-      </div>
-    )
+  const handleParameterChange = (name: string, value: any) => {
+    onParametersChange({ [name]: value })
   }
 
   return (
-    <div
-      style={{
-        backgroundColor: "white",
-        border: "1px solid #e2e8f0",
-        borderRadius: "8px",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <div
-        style={{
-          padding: "16px",
-          borderBottom: "1px solid #e2e8f0",
-          backgroundColor: "#f8fafc",
-        }}
-      >
-        <h3 style={{ margin: "0 0 4px 0", fontSize: "16px", fontWeight: "600", color: "#1f2937" }}>
+    <div className="professional-card" style={{ overflow: "hidden" }}>
+      <div style={{ padding: "20px" }}>
+        <h2
+          style={{
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#0f172a",
+            marginBottom: "16px",
+            display: "flex",
+            alignItems: "center",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          <Settings style={{ marginRight: "8px", height: "18px", width: "18px", color: "#64748b" }} />
           Report Parameters
-        </h3>
-        <p style={{ margin: 0, fontSize: "14px", color: "#6b7280" }}>{reportPath.split("/").pop()}</p>
-      </div>
+        </h2>
 
-      <div style={{ flex: 1, overflow: "auto", padding: "16px" }}>
-        {isLoading && (
-          <div style={{ textAlign: "center", padding: "20px", color: "#6b7280" }}>Loading parameters...</div>
-        )}
-
-        {error && (
-          <div
-            style={{
-              padding: "16px",
-              backgroundColor: "#fef2f2",
-              color: "#dc2626",
-              borderRadius: "4px",
-              marginBottom: "16px",
-            }}
-          >
+        {!reportPath ? (
+          <div style={{ 
+            textAlign: "center", 
+            padding: "40px 20px",
+            color: "#64748b",
+            fontSize: "14px"
+          }}>
+            <AlertCircle style={{ 
+              marginBottom: "12px", 
+              height: "32px", 
+              width: "32px", 
+              color: "#94a3b8",
+              margin: "0 auto 12px"
+            }} />
+            <p>Select a report to configure parameters</p>
+          </div>
+        ) : isLoading ? (
+          <div style={{ 
+            display: "flex", 
+            justifyContent: "center", 
+            alignItems: "center", 
+            minHeight: "200px" 
+          }}>
+            <div
+              style={{
+                width: "24px",
+                height: "24px",
+                border: "2px solid #e2e8f0",
+                borderTop: "2px solid #64748b",
+                borderRadius: "50%",
+                animation: "spin 1s linear infinite",
+              }}
+            />
+          </div>
+        ) : error ? (
+          <div style={{ 
+            padding: "16px",
+            backgroundColor: "#fef2f2",
+            border: "1px solid #fecaca",
+            borderRadius: "6px",
+            color: "#dc2626",
+            fontSize: "14px"
+          }}>
+            <AlertCircle style={{ marginRight: "8px", height: "16px", width: "16px", display: "inline" }} />
             Error loading parameters: {error}
           </div>
-        )}
-
-        {parameters.length === 0 && !isLoading && !error && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "20px",
-              color: "#6b7280",
-              backgroundColor: "#f9fafb",
-              borderRadius: "4px",
-            }}
-          >
-            This report has no parameters.
-          </div>
-        )}
-
-        {parameters.length > 0 && (
+        ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {parameters.map((param) => (
+            {parameters?.map((param: ReportParameter) => (
               <div key={param.name}>
                 <label
                   style={{
                     display: "block",
-                    marginBottom: "4px",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
+                    marginBottom: "6px",
                   }}
                 >
                   {param.prompt || param.name}
-                  {!param.nullable && <span style={{ color: "#dc2626" }}>*</span>}
+                  {/* Removed allowNull check as it does not exist on ReportParameter */}
                 </label>
-
-                {renderParameterInput(param)}
-
-                <div style={{ marginTop: "4px", fontSize: "12px", color: "#6b7280" }}>
-                  Type: {param.type}
-                  {param.multiValue && " (Multiple values)"}
-                  {param.nullable && " (Optional)"}
-                </div>
+                <input
+                  type={param.type === "DateTime" ? "datetime-local" : "text"}
+                  defaultValue={param.defaultValue}
+                  onChange={(e) => handleParameterChange(param.name, e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: "6px",
+                    border: "1px solid #d1d5db",
+                    fontSize: "14px",
+                    backgroundColor: "#ffffff",
+                    transition: "all 0.2s ease",
+                    outline: "none",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "#0ea5e9"
+                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(14, 165, 233, 0.1)"
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "#d1d5db"
+                    e.currentTarget.style.boxShadow = "none"
+                  }}
+                />
+                {param.validValues && param.validValues.length > 0 && (
+                  <div style={{ 
+                    marginTop: "6px",
+                    fontSize: "12px",
+                    color: "#6b7280"
+                  }}>
+                    Valid values: {param.validValues.join(", ")}
+                  </div>
+                )}
               </div>
             ))}
-
-            <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-              <button
-                onClick={resetParameters}
-                style={{
-                  padding: "8px 16px",
-                  backgroundColor: "#f3f4f6",
-                  color: "#374151",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                }}
-              >
-                Reset to Defaults
-              </button>
-            </div>
           </div>
         )}
       </div>

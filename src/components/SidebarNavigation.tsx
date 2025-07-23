@@ -1,3 +1,4 @@
+
 "use client"
 
 import type React from "react"
@@ -11,7 +12,7 @@ interface SidebarNavigationProps {
 }
 
 export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ selectedPath, onPathChange }) => {
-  const { folderData } = useSSRSBrowser()
+  const { folderData } = useSSRSBrowser("/")
 
   const folderItems = [
     { name: "Root", path: "/", icon: Home },
@@ -24,30 +25,33 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ selectedPa
 
   return (
     <div
+      className="professional-card"
       style={{
-        backgroundColor: "white",
-        borderRadius: "8px",
-        boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+        overflow: "hidden",
+        transition: "all 0.2s ease",
       }}
     >
-      <div style={{ padding: "24px" }}>
+      <div style={{ padding: "20px" }}>
         <h3
           style={{
-            fontSize: "18px",
-            fontWeight: "500",
-            color: "#111827",
+            fontSize: "16px",
+            fontWeight: "600",
+            color: "#0f172a",
             marginBottom: "16px",
             display: "flex",
             alignItems: "center",
+            letterSpacing: "-0.01em",
           }}
         >
-          <FolderOpen style={{ marginRight: "8px", height: "20px", width: "20px" }} />
+          <FolderOpen style={{ marginRight: "8px", height: "18px", width: "18px", color: "#64748b" }} />
           Report Folders
         </h3>
 
-        <ConnectionStatus />
+        <div style={{ marginBottom: "16px" }}>
+          <ConnectionStatus />
+        </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
           {folderItems.map((item) => {
             const Icon = item.icon
             const isSelected = selectedPath === item.path
@@ -57,35 +61,38 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ selectedPa
                 key={item.path}
                 style={{
                   cursor: "pointer",
-                  padding: "8px",
+                  padding: "10px 12px",
                   borderRadius: "6px",
-                  transition: "all 0.2s",
-                  backgroundColor: isSelected ? "#dbeafe" : "transparent",
-                  color: isSelected ? "#2563eb" : "#374151",
-                  fontWeight: isSelected ? "500" : "normal",
+                  transition: "all 0.2s ease",
+                  backgroundColor: isSelected ? "#f1f5f9" : "transparent",
+                  border: isSelected ? "1px solid #cbd5e1" : "1px solid transparent",
+                  color: isSelected ? "#0f172a" : "#475569",
+                  fontWeight: isSelected ? "500" : "400",
                 }}
                 onClick={() => onPathChange(item.path)}
                 onMouseEnter={(e) => {
                   if (!isSelected) {
-                    e.currentTarget.style.backgroundColor = "#f9fafb"
+                    e.currentTarget.style.backgroundColor = "#f8fafc"
+                    e.currentTarget.style.color = "#334155"
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isSelected) {
                     e.currentTarget.style.backgroundColor = "transparent"
+                    e.currentTarget.style.color = "#475569"
                   }
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center" }}>
                   <Icon
                     style={{
-                      marginRight: "8px",
+                      marginRight: "10px",
                       height: "16px",
                       width: "16px",
-                      color: item.path === "/" ? "#2563eb" : "#eab308",
+                      color: item.path === "/" ? "#64748b" : "#94a3b8",
                     }}
                   />
-                  {item.name}
+                  <span style={{ fontSize: "14px" }}>{item.name}</span>
                 </div>
               </div>
             )

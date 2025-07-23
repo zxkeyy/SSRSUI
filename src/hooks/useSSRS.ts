@@ -45,8 +45,7 @@ export function useSSRSConnection() {
 /**
  * Hook for browsing SSRS folders and reports
  */
-export function useSSRSBrowser() {
-  const [currentPath, setCurrentPath] = useState('/');
+export function useSSRSBrowser(currentPath: string) {
   const [folderData, setFolderData] = useState<BrowseResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,11 +53,9 @@ export function useSSRSBrowser() {
   const browseFolder = useCallback(async (folderPath: string) => {
     setIsLoading(true);
     setError(null);
-    
     try {
       const data = await ssrsApi.browseFolder(folderPath);
       setFolderData(data);
-      setCurrentPath(folderPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to browse folder');
     } finally {
@@ -66,28 +63,16 @@ export function useSSRSBrowser() {
     }
   }, []);
 
-  const navigateToFolder = useCallback((folderPath: string) => {
-    browseFolder(folderPath);
-  }, [browseFolder]);
-
-  const navigateUp = useCallback(() => {
-    if (currentPath !== '/') {
-      const parentPath = currentPath.split('/').slice(0, -1).join('/') || '/';
-      browseFolder(parentPath);
+  useEffect(() => {
+    if (currentPath) {
+      browseFolder(currentPath);
     }
   }, [currentPath, browseFolder]);
 
-  useEffect(() => {
-    browseFolder('/');
-  }, [browseFolder]);
-
   return {
-    currentPath,
     folderData,
     isLoading,
     error,
-    navigateToFolder,
-    navigateUp,
     refreshFolder: () => browseFolder(currentPath)
   };
 }

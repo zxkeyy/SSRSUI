@@ -10,17 +10,29 @@ interface FolderBrowserProps {
 }
 
 export const FolderBrowser: React.FC<FolderBrowserProps> = ({ onReportSelect, selectedReport }) => {
-  const { currentPath, folderData, isLoading, error, navigateToFolder, navigateUp } = useSSRSBrowser()
+  const [currentPath, setCurrentPath] = React.useState<string>("/");
+  const { folderData, isLoading, error } = useSSRSBrowser(currentPath);
 
   const handleFolderClick = (folder: FolderItem) => {
-    navigateToFolder(folder.path)
-  }
+    setCurrentPath(folder.path);
+  };
 
   const handleReportClick = (report: ReportItem) => {
-    onReportSelect(report.path)
-  }
+    onReportSelect(report.path);
+  };
 
-  const pathParts = currentPath.split("/").filter(Boolean)
+  const handleNavigateToFolder = (path: string) => {
+    setCurrentPath(path);
+  };
+
+  const handleNavigateUp = () => {
+    if (currentPath !== "/") {
+      const parentPath = currentPath.split("/").slice(0, -1).join("/") || "/";
+      setCurrentPath(parentPath);
+    }
+  };
+
+  const pathParts = currentPath.split("/").filter(Boolean);
 
   return (
     <div
@@ -46,7 +58,7 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({ onReportSelect, se
         {/* Breadcrumb */}
         <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#6b7280" }}>
           <button
-            onClick={() => navigateToFolder("/")}
+            onClick={() => handleNavigateToFolder("/")}
             style={{
               background: "none",
               border: "none",
@@ -58,11 +70,11 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({ onReportSelect, se
           >
             Root
           </button>
-          {pathParts.map((part, index) => (
+          {pathParts.map((part: string, index: number) => (
             <React.Fragment key={index}>
               <span>/</span>
               <button
-                onClick={() => navigateToFolder("/" + pathParts.slice(0, index + 1).join("/"))}
+                onClick={() => handleNavigateToFolder("/" + pathParts.slice(0, index + 1).join("/"))}
                 style={{
                   background: "none",
                   border: "none",
@@ -103,7 +115,7 @@ export const FolderBrowser: React.FC<FolderBrowserProps> = ({ onReportSelect, se
             {/* Up button */}
             {currentPath !== "/" && (
               <button
-                onClick={navigateUp}
+                onClick={handleNavigateUp}
                 style={{
                   width: "100%",
                   padding: "8px 12px",
