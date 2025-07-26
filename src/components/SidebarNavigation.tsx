@@ -28,30 +28,34 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ selectedPa
       className="professional-card"
       style={{
         overflow: "hidden",
+        border: "none",
+        boxShadow: "none",
+        background: "transparent",
+        padding: 0,
         transition: "all 0.2s ease",
       }}
     >
-      <div style={{ padding: "20px" }}>
+      <div style={{ padding: "14px 8px 8px 8px" }}>
         <h3
           style={{
-            fontSize: "16px",
-            fontWeight: "600",
-            color: "#0f172a",
-            marginBottom: "16px",
+            fontSize: "15px",
+            fontWeight: 600,
+            color: "#1e293b",
+            marginBottom: "8px",
             display: "flex",
             alignItems: "center",
             letterSpacing: "-0.01em",
           }}
         >
-          <FolderOpen style={{ marginRight: "8px", height: "18px", width: "18px", color: "#64748b" }} />
+          <FolderOpen style={{ marginRight: "7px", height: "17px", width: "17px", color: "#64748b" }} />
           Report Folders
         </h3>
 
-        <div style={{ marginBottom: "16px" }}>
+        <div style={{ marginBottom: "8px" }}>
           <ConnectionStatus />
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
           {folderItems.map((item) => {
             const Icon = item.icon
             const isSelected = selectedPath === item.path
@@ -61,39 +65,41 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ selectedPa
                 key={item.path}
                 style={{
                   cursor: "pointer",
-                  padding: "10px 12px",
-                  borderRadius: "6px",
+                  padding: "7px 10px",
+                  borderRadius: "4px",
                   transition: "all 0.2s ease",
-                  backgroundColor: isSelected ? "#f1f5f9" : "transparent",
-                  border: isSelected ? "1px solid #cbd5e1" : "1px solid transparent",
-                  color: isSelected ? "#0f172a" : "#475569",
-                  fontWeight: isSelected ? "500" : "400",
+                  backgroundColor: isSelected ? "#e8f0fe" : "transparent",
+                  border: isSelected ? "1.5px solid #2563eb" : "1px solid transparent",
+                  color: isSelected ? "#2563eb" : "#334155",
+                  fontWeight: isSelected ? 600 : 400,
+                  marginBottom: "1px",
+                  fontSize: "13px",
+                  display: "flex",
+                  alignItems: "center"
                 }}
                 onClick={() => onPathChange(item.path)}
                 onMouseEnter={(e) => {
                   if (!isSelected) {
-                    e.currentTarget.style.backgroundColor = "#f8fafc"
+                    e.currentTarget.style.backgroundColor = "#f3f6fa"
                     e.currentTarget.style.color = "#334155"
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!isSelected) {
                     e.currentTarget.style.backgroundColor = "transparent"
-                    e.currentTarget.style.color = "#475569"
+                    e.currentTarget.style.color = "#334155"
                   }
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center" }}>
-                  <Icon
-                    style={{
-                      marginRight: "10px",
-                      height: "16px",
-                      width: "16px",
-                      color: item.path === "/" ? "#64748b" : "#94a3b8",
-                    }}
-                  />
-                  <span style={{ fontSize: "14px" }}>{item.name}</span>
-                </div>
+                <Icon
+                  style={{
+                    marginRight: "8px",
+                    height: "15px",
+                    width: "15px",
+                    color: item.path === "/" ? "#64748b" : "#94a3b8",
+                  }}
+                />
+                <span>{item.name}</span>
               </div>
             )
           })}

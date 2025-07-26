@@ -18,46 +18,25 @@ function App() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#f8fafc",
-        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif',
+        background: "#f4f6f8",
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
         color: "#1e293b",
       }}
     >
       <style>
         {`
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-          
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-          
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          
-          @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          
-          * {
-            box-sizing: border-box;
-          }
-          
-          body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          }
-          
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+          * { box-sizing: border-box; }
+          body { margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
           .professional-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-            border-radius: 8px;
-            animation: fadeIn 0.4s ease-out;
+            background: #fff;
+            border: 1px solid #e0e3e7;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            border-radius: 6px;
+            animation: fadeIn 0.3s ease-out;
           }
         `}
       </style>
@@ -65,46 +44,39 @@ function App() {
       {/* Header */}
       <header
         style={{
-          backgroundColor: "#ffffff",
-          borderBottom: "1px solid #e2e8f0",
-          padding: "16px 24px",
+          backgroundColor: "#f9fafb",
+          borderBottom: "1px solid #e0e3e7",
+          padding: "10px 32px 10px 20px",
           position: "sticky",
           top: 0,
           zIndex: 100,
-          animation: "slideIn 0.4s ease-out"
+          animation: "slideIn 0.3s ease-out"
         }}
       >
         <div
           style={{
-            maxWidth: "1400px",
-            margin: "0 auto",
+            width: "100%",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            maxWidth: "100vw"
           }}
         >
           <div>
             <h1
               style={{
-                margin: "0 0 4px 0",
-                fontSize: "24px",
-                fontWeight: "600",
+                margin: 0,
+                fontSize: "20px",
+                fontWeight: 600,
                 color: "#0f172a",
                 letterSpacing: "-0.01em",
               }}
             >
               SSRS Report Manager
             </h1>
-            <p
-              style={{
-                margin: 0,
-                fontSize: "14px",
-                color: "#64748b",
-                fontWeight: "400",
-              }}
-            >
+            <span style={{ fontSize: "13px", color: "#64748b", fontWeight: 400 }}>
               SQL Server Reporting Services
-            </p>
+            </span>
           </div>
           <UserInfo />
         </div>
@@ -113,54 +85,66 @@ function App() {
       {/* Main Content */}
       <div
         style={{
-          maxWidth: "1400px",
-          margin: "0 auto",
-          padding: "24px",
+          width: "100vw",
+          minHeight: "calc(100vh - 60px)",
+          margin: 0,
+          padding: 0,
+          display: "flex",
+          flexDirection: "row",
         }}
       >
-        <div style={{ marginBottom: "16px" }}>
-          <BreadcrumbNavigation currentPath={currentPath} onPathChange={setCurrentPath} />
-        </div>
-
-        <div
+        {/* Sidebar */}
+        <aside
           style={{
-            display: "grid",
-            gridTemplateColumns: "280px 1fr",
-            gap: "24px",
-            alignItems: "start",
+            width: 220,
+            minWidth: 180,
+            maxWidth: 260,
+            background: "#f3f4f6",
+            borderRight: "1px solid #e0e3e7",
+            padding: "0 0 0 0",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            gap: 0,
+            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
           }}
         >
-          {/* Sidebar */}
-          <div style={{ animation: "slideIn 0.4s ease-out 0.1s both" }}>
-            <SidebarNavigation selectedPath={currentPath} onPathChange={setCurrentPath} />
+          <SidebarNavigation selectedPath={currentPath} onPathChange={setCurrentPath} />
+        </aside>
+
+        {/* Main Content Area */}
+        <main
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: "24px 24px 24px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "18px",
+            background: "#f4f6f8",
+            height: "100%"
+          }}
+        >
+          <BreadcrumbNavigation currentPath={currentPath} onPathChange={setCurrentPath} />
+          {/* Report Browser - now full width grid */}
+          <div style={{ width: "100%", marginBottom: "18px" }}>
+            <ReportBrowser currentPath={currentPath} onPathChange={setCurrentPath} onReportSelect={setSelectedReport} />
           </div>
 
-          {/* Main Content Area */}
+          {/* Report Parameters and Viewer */}
           <div
             style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "24px",
-              animation: "fadeIn 0.4s ease-out 0.2s both"
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "18px",
+              minHeight: "420px",
+              height: "100%"
             }}
           >
-            {/* Report Browser */}
-            <ReportBrowser currentPath={currentPath} onPathChange={setCurrentPath} onReportSelect={setSelectedReport} />
-
-            {/* Report Parameters and Viewer */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "24px",
-                minHeight: "500px",
-              }}
-            >
-              <ReportParameters reportPath={selectedReport} onParametersChange={setReportParameters} />
-              <ReportViewer reportPath={selectedReport} parameters={reportParameters} />
-            </div>
+            <ReportParameters reportPath={selectedReport} onParametersChange={setReportParameters} />
+            <ReportViewer reportPath={selectedReport} parameters={reportParameters} />
           </div>
-        </div>
+        </main>
       </div>
     </div>
   )

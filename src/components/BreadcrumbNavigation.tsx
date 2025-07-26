@@ -21,21 +21,22 @@ export const BreadcrumbNavigation: React.FC<BreadcrumbNavigationProps> = ({ curr
   ]
 
   return (
-    <nav 
-      style={{ 
-        display: "flex", 
-        marginBottom: "8px",
-        background: "#ffffff",
-        border: "1px solid #e2e8f0",
-        borderRadius: "6px",
-        padding: "12px 16px",
-      }} 
+    <nav
+      style={{
+        display: "flex",
+        background: "#fff",
+        border: "1px solid #e0e3e7",
+        borderRadius: "5px",
+        padding: "7px 14px",
+        marginBottom: "2px",
+        minHeight: "36px"
+      }}
       aria-label="Breadcrumb"
     >
-      <ol style={{ 
-        display: "inline-flex", 
-        alignItems: "center", 
-        gap: "6px",
+      <ol style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "4px",
         margin: 0,
         padding: 0,
         listStyle: "none",
@@ -43,20 +44,20 @@ export const BreadcrumbNavigation: React.FC<BreadcrumbNavigationProps> = ({ curr
         {breadcrumbs.map((breadcrumb, index) => (
           <li key={breadcrumb.path} style={{ display: "inline-flex", alignItems: "center" }}>
             {index > 0 && (
-              <ChevronRight 
-                style={{ 
-                  width: "14px", 
-                  height: "14px", 
-                  color: "#94a3b8", 
-                  margin: "0 6px" 
-                }} 
+              <ChevronRight
+                style={{
+                  width: "13px",
+                  height: "13px",
+                  color: "#b6beca",
+                  margin: "0 4px"
+                }}
               />
             )}
             {index === breadcrumbs.length - 1 ? (
-              <span style={{ 
-                fontSize: "14px", 
-                fontWeight: "500", 
-                color: "#0f172a"
+              <span style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#1e293b"
               }}>
                 {breadcrumb.name}
               </span>

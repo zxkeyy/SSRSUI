@@ -23,11 +23,13 @@ export const ConnectionStatus: React.FC = () => {
       style={{
         display: "flex",
         alignItems: "center",
-        gap: "12px",
-        padding: "8px 16px",
-        backgroundColor: "#f8fafc",
-        borderRadius: "8px",
-        border: "1px solid #e2e8f0",
+        padding: "4px 10px 4px 8px",
+        backgroundColor: "#f4f6f8",
+        borderRadius: "5px",
+        border: "1px solid #e0e3e7",
+        fontSize: "13px",
+        minHeight: 0,
+        width: "100%"
       }}
     >
       <div
@@ -36,27 +38,33 @@ export const ConnectionStatus: React.FC = () => {
           height: "8px",
           borderRadius: "50%",
           backgroundColor: getStatusColor(),
-          animation: isLoading ? "pulse 2s infinite" : "none",
+          marginRight: "8px",
+          flexShrink: 0
         }}
       />
-      <span style={{ fontSize: "14px", fontWeight: "500", color: "#374151" }}>{getStatusText()}</span>
-      {connectionStatus && (
-        <span style={{ fontSize: "12px", color: "#6b7280" }}>
-          ({connectionStatus.reportCount} reports, {connectionStatus.folderCount} folders)
-        </span>
-      )}
+      <div style={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0, flexWrap: "wrap", gap: 4 }}>
+        <span style={{ fontWeight: 600, color: "#1e293b", minWidth: 0, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", maxWidth: "100%" }}>{getStatusText()}</span>
+        {connectionStatus && (
+          <span style={{ fontSize: "12px", color: "#64748b", marginLeft: 8, minWidth: 0, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", maxWidth: "100%" }}>
+            ({connectionStatus.reportCount} reports, {connectionStatus.folderCount} folders)
+          </span>
+        )}
+      </div>
       <button
         onClick={testConnection}
         disabled={isLoading}
         style={{
-          padding: "4px 8px",
+          padding: "2px 10px",
           fontSize: "12px",
-          backgroundColor: "#3b82f6",
+          backgroundColor: isLoading ? "#a5b4fc" : "#2563eb",
           color: "white",
           border: "none",
-          borderRadius: "4px",
+          borderRadius: "3px",
           cursor: isLoading ? "not-allowed" : "pointer",
-          opacity: isLoading ? 0.6 : 1,
+          opacity: isLoading ? 0.7 : 1,
+          marginLeft: 12,
+          height: 26,
+          minWidth: 48
         }}
       >
         {isLoading ? "Testing..." : "Test"}
