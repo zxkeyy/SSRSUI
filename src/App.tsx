@@ -1,23 +1,79 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { SidebarNavigation } from "./components/SidebarNavigation"
 import { BreadcrumbNavigation } from "./components/BreadcrumbNavigation"
 import { EnhancedReportBrowser } from "./components/EnhancedReportBrowser"
 import { ReportPanel } from "./components/ReportPanel"
 import { UserInfo } from "./components/UserInfo"
 import { ConnectionStatus } from "./components/ConnectionStatus"
-import { FileText, Settings } from "lucide-react"
+import { FileText, Settings, Key, Users, ListFilter, X } from "lucide-react"
+import { ssrsApi } from "./services/ssrsApi" // Import ssrsApi
+import type { PolicyInfo, RoleInfo } from "./types/api" // Import PolicyInfo and RoleInfo
 
 function App() {
   const [currentPath, setCurrentPath] = useState("/")
   const [selectedReport, setSelectedReport] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<"browse" | "settings">("browse")
+  const [activeSettingsSubTab, setActiveSettingsSubTab] = useState<"globalSecurity" | "serverConfig" | "dataSources" | "auditLogs">("globalSecurity")
+
+  // State for System Policies
+  const [systemPolicies, setSystemPolicies] = useState<PolicyInfo[]>([])
+  const [systemRoles, setSystemRoles] = useState<RoleInfo[]>([])
+  const [isLoadingSystemPolicies, setIsLoadingSystemPolicies] = useState(false)
+  const [systemPolicyError, setSystemPolicyError] = useState<string | null>(null)
+  const [systemPolicySuccess, setSystemPolicySuccess] = useState<string | null>(null)
 
   const tabs = [
     { id: "browse", label: "Browse Reports", icon: FileText },
     { id: "settings", label: "System Settings", icon: Settings },
   ]
+
+  const settingsSubTabs = [
+    { id: "globalSecurity", label: "Global Security & Policies", icon: Key },
+    { id: "serverConfig", label: "Server Configuration", icon: Settings },
+    { id: "dataSources", label: "Data Source Management", icon: ListFilter },
+    { id: "auditLogs", label: "Audit Logs", icon: Users },
+  ];
+
+  // Fetch System Policies and System Roles
+  const fetchSystemPoliciesAndRoles = useCallback(async () => {
+    setIsLoadingSystemPolicies(true)
+    setSystemPolicyError(null)
+    try {
+      const [policiesData, { systemRoles: fetchedSystemRoles }] = await Promise.all([
+        ssrsApi.getSystemPolicies(),
+        ssrsApi.getAllRoles() // Use getAllRoles to get both system and catalog roles
+      ])
+      setSystemPolicies(policiesData)
+      setSystemRoles(fetchedSystemRoles) // Set only system roles for this section
+    } catch (err: any) {
+      setSystemPolicyError("Failed to load system security settings: " + err.message)
+    } finally {
+      setIsLoadingSystemPolicies(false)
+    }
+  }, [])
+
+  // Save System Policies
+  const saveSystemPolicies = async () => {
+    setIsLoadingSystemPolicies(true)
+    setSystemPolicyError(null)
+    setSystemPolicySuccess(null)
+    try {
+      await ssrsApi.setSystemPolicies(systemPolicies)
+      setSystemPolicySuccess("System policies updated successfully!")
+    } catch (err: any) {
+      setSystemPolicyError("Failed to save system policies: " + err.message)
+    } finally {
+      setIsLoadingSystemPolicies(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "settings" && activeSettingsSubTab === "globalSecurity") {
+      fetchSystemPoliciesAndRoles()
+    }
+  }, [activeTab, activeSettingsSubTab, fetchSystemPoliciesAndRoles])
 
   return (
     <div
@@ -217,19 +273,292 @@ function App() {
           )}
 
           {activeTab === "settings" && (
-            <div className="professional-card" style={{ padding: "20px" }}>
-              <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#0f172a", marginBottom: "16px" }}>
-                System Settings
-              </h2>
-              <div style={{ color: "#64748b", fontSize: "14px" }}>
-                <p>System configuration and administrative settings will be available here.</p>
-                <ul style={{ marginTop: "16px", paddingLeft: "20px" }}>
-                  <li>Server configuration</li>
-                  <li>Global security policies</li>
-                  <li>Data source management</li>
-                  <li>Backup and maintenance</li>
-                  <li>Audit logs</li>
-                </ul>
+            <div className="professional-card" style={{ padding: "0", overflow: "hidden" }}>
+              <div style={{ display: "flex", borderBottom: "1px solid #e0e3e7", padding: "10px 20px" }}>
+                {settingsSubTabs.map((subTab) => {
+                  const Icon = subTab.icon;
+                  const isActive = activeSettingsSubTab === subTab.id;
+                  return (
+                    <button
+                      key={subTab.id}
+                      onClick={() => setActiveSettingsSubTab(subTab.id as any)}
+                      style={{
+                        padding: "8px 16px",
+                        border: "none",
+                        background: isActive ? "#e0e7ff" : "transparent",
+                        color: isActive ? "#2563eb" : "#64748b",
+                        fontSize: "13px",
+                        fontWeight: isActive ? 600 : 500,
+                        cursor: "pointer",
+                        borderRadius: "5px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        transition: "all 0.2s ease",
+                        marginRight: "10px"
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive) {
+                          e.currentTarget.style.backgroundColor = "#f3f6fa";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }
+                      }}
+                    >
+                      <Icon style={{ height: "14px", width: "14px" }} />
+                      {subTab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={{ padding: "20px" }}>
+                {activeSettingsSubTab === "globalSecurity" && (
+                  <div>
+                    <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#0f172a", marginBottom: "16px" }}>
+                      Global Security & System Policies
+                    </h2>
+                    {systemPolicySuccess && (
+                      <div style={{
+                        padding: "12px",
+                        backgroundColor: "#f0fdf4",
+                        border: "1px solid #bbf7d0",
+                        borderRadius: "6px",
+                        color: "#16a34a",
+                        fontSize: "14px",
+                        marginBottom: "16px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center"
+                      }}>
+                        {systemPolicySuccess}
+                        <button onClick={() => setSystemPolicySuccess(null)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                          <X style={{ height: "16px", width: "16px" }} />
+                        </button>
+                      </div>
+                    )}
+
+                    {systemPolicyError && (
+                      <div style={{
+                        padding: "12px",
+                        backgroundColor: "#fef2f2",
+                        border: "1px solid #fecaca",
+                        borderRadius: "6px",
+                        color: "#dc2626",
+                        fontSize: "14px",
+                        marginBottom: "16px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center"
+                      }}>
+                        {systemPolicyError}
+                        <button onClick={() => setSystemPolicyError(null)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                          <X style={{ height: "16px", width: "16px" }} />
+                        </button>
+                      </div>
+                    )}
+                    {isLoadingSystemPolicies ? (
+                      <div style={{ textAlign: "center", padding: "20px" }}>Loading system security settings...</div>
+                    ) : (
+                      <>
+                        <div style={{ marginBottom: "20px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                            <h4 style={{ fontSize: "16px", fontWeight: "600", margin: 0 }}>System Policies</h4>
+                            <button
+                              onClick={() => {
+                                const newPolicy: PolicyInfo = { groupUserName: "", roles: [] }
+                                setSystemPolicies([...systemPolicies, newPolicy])
+                              }}
+                              style={{
+                                padding: "4px 8px",
+                                backgroundColor: "#10b981",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "4px",
+                                fontSize: "12px",
+                                cursor: "pointer"
+                              }}
+                            >
+                              Add System Policy
+                            </button>
+                          </div>
+
+                          {systemPolicies.length === 0 ? (
+                            <div style={{ color: "#64748b", fontSize: "14px", textAlign: "center", padding: "20px" }}>
+                              No system policies configured
+                            </div>
+                          ) : (
+                            <div style={{ display: "grid", gap: "12px", overflowY: "auto" }}>
+                              {systemPolicies.map((policy, index) => (
+                                <div
+                                  key={index}
+                                  style={{
+                                    padding: "12px",
+                                    border: "1px solid #e0e3e7",
+                                    borderRadius: "6px",
+                                    backgroundColor: "#f8fafc"
+                                  }}
+                                >
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: "12px" }}>
+                                    <input
+                                      type="text"
+                                      value={policy.groupUserName}
+                                      onChange={(e) => {
+                                        const newPolicies = [...systemPolicies]
+                                        newPolicies[index].groupUserName = e.target.value
+                                        setSystemPolicies(newPolicies)
+                                      }}
+                                      placeholder="User/Group name (e.g., DOMAIN\\User)"
+                                      style={{
+                                        flex: 1,
+                                        padding: "6px 8px",
+                                        border: "1px solid #d1d5db",
+                                        borderRadius: "4px",
+                                        fontSize: "14px",
+                                        marginRight: "8px"
+                                      }}
+                                    />
+                                    <button
+                                      onClick={() => setSystemPolicies(systemPolicies.filter((_, i) => i !== index))}
+                                      style={{
+                                        padding: "4px 8px",
+                                        backgroundColor: "#dc2626",
+                                        color: "white",
+                                        border: "none",
+                                        borderRadius: "4px",
+                                        fontSize: "12px",
+                                        cursor: "pointer"
+                                      }}
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+
+                                  <div>
+                                    <label style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: "500" }}>
+                                      System Roles:
+                                    </label>
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                                      {systemRoles.map((role) => (
+                                        <label key={role.name} style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px" }}>
+                                          <input
+                                            type="checkbox"
+                                            checked={policy.roles.includes(role.name)}
+                                            onChange={(e) => {
+                                              const newPolicies = [...systemPolicies]
+                                              if (e.target.checked) {
+                                                newPolicies[index].roles = [...new Set([...policy.roles, role.name])]
+                                              } else {
+                                                newPolicies[index].roles = policy.roles.filter(r => r !== role.name)
+                                              }
+                                              setSystemPolicies(newPolicies)
+                                            }}
+                                          />
+                                          {role.name}
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div style={{ marginBottom: "20px" }}>
+                          <h4 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "8px" }}>Available System Roles</h4>
+                          <div style={{ maxHeight: "150px", overflowY: "auto", border: "1px solid #e0e3e7", borderRadius: "6px", padding: "10px" }}>
+                            {systemRoles.length === 0 ? (
+                              <div style={{ color: "#64748b", fontSize: "14px", textAlign: "center", padding: "10px" }}>
+                                No system roles found.
+                              </div>
+                            ) : (
+                              systemRoles.map((role) => (
+                                <div
+                                  key={role.name}
+                                  style={{
+                                    padding: "6px 0",
+                                    borderBottom: "1px dashed #e0e3e7"
+                                  }}
+                                >
+                                  <div style={{ fontSize: "14px", fontWeight: "500" }}>{role.name}</div>
+                                  <div style={{ fontSize: "12px", color: "#64748b" }}>{role.description}</div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
+                          <button
+                            onClick={saveSystemPolicies}
+                            disabled={isLoadingSystemPolicies}
+                            style={{
+                              padding: "8px 16px",
+                              backgroundColor: "#2563eb",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "6px",
+                              cursor: isLoadingSystemPolicies ? "not-allowed" : "pointer",
+                              opacity: isLoadingSystemPolicies ? 0.6 : 1
+                            }}
+                          >
+                            {isLoadingSystemPolicies ? "Saving..." : "Save System Policies"}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {activeSettingsSubTab === "serverConfig" && (
+                  <div>
+                    <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#0f172a", marginBottom: "16px" }}>
+                      Server Configuration
+                    </h2>
+                    <div style={{ color: "#64748b", fontSize: "14px" }}>
+                      <p>Details for server-level settings and configurations.</p>
+                      <ul style={{ marginTop: "16px", paddingLeft: "20px" }}>
+                        <li>General server properties</li>
+                        <li>Performance settings</li>
+                        <li>Database connection settings</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {activeSettingsSubTab === "dataSources" && (
+                  <div>
+                    <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#0f172a", marginBottom: "16px" }}>
+                      Data Source Management
+                    </h2>
+                    <div style={{ color: "#64748b", fontSize: "14px" }}>
+                      <p>Manage shared data sources used by reports.</p>
+                      <ul style={{ marginTop: "16px", paddingLeft: "20px" }}>
+                        <li>Add, edit, or delete shared data sources</li>
+                        <li>Configure connection strings and credentials</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {activeSettingsSubTab === "auditLogs" && (
+                  <div>
+                    <h2 style={{ fontSize: "18px", fontWeight: "600", color: "#0f172a", marginBottom: "16px" }}>
+                      Audit Logs
+                    </h2>
+                    <div style={{ color: "#64748b", fontSize: "14px" }}>
+                      <p>Review system and user activity logs.</p>
+                      <ul style={{ marginTop: "16px", paddingLeft: "20px" }}>
+                        <li>View recent actions and events</li>
+                        <li>Filter and search log entries</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

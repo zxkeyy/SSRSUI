@@ -216,7 +216,23 @@ class SSRSApiService {
   }
 
   /**
-   * List all available SSRS roles
+   * List all available SSRS catalog roles (item-level roles)
+   * Replaces the legacy listRoles() method
+   */
+  async listCatalogRoles(): Promise<RoleInfo[]> {
+    return this.request<RoleInfo[]>(`${this.securityBaseUrl}/roles/catalog`);
+  }
+
+  /**
+   * List all available SSRS system roles (system-level roles)
+   */
+  async listSystemRoles(): Promise<RoleInfo[]> {
+    return this.request<RoleInfo[]>(`${this.securityBaseUrl}/roles/system`);
+  }
+
+  /**
+   * List all available SSRS roles (legacy endpoint - uses catalog roles)
+   * @deprecated Use listCatalogRoles() instead for catalog roles or listSystemRoles() for system roles
    */
   async listRoles(): Promise<RoleInfo[]> {
     return this.request<RoleInfo[]>(`${this.securityBaseUrl}/roles`);
@@ -236,6 +252,23 @@ class SSRSApiService {
       itemType: string;
       roles: string[];
     }>>(url);
+  }
+
+  /**
+   * Get global (system-level) security policies.
+   */
+  async getSystemPolicies(): Promise<PolicyInfo[]> {
+    return this.request<PolicyInfo[]>(`${this.securityBaseUrl}/system-policies`);
+  }
+
+  /**
+   * Set global (system-level) security policies. This will overwrite all existing system policies.
+   */
+  async setSystemPolicies(policies: PolicyInfo[]): Promise<{ message: string }> {
+    return this.request<{ message: string }>(`${this.securityBaseUrl}/system-policies`, {
+      method: 'POST',
+      body: JSON.stringify(policies),
+    });
   }
 
   // ===========================================
@@ -399,6 +432,97 @@ class SSRSApiService {
     }
 
     return { successful, failed };
+  }
+
+  // ===========================================
+  // ENHANCED SECURITY METHODS
+  // ===========================================
+
+  /**
+   * Get all available roles (both system and catalog roles)
+   */
+  async getAllRoles(): Promise<{
+    systemRoles: RoleInfo[];
+    catalogRoles: RoleInfo[];
+  }> {
+    const [systemRoles, catalogRoles] = await Promise.all([
+      this.listSystemRoles(),
+      this.listCatalogRoles()
+    ]);
+
+    return {
+      systemRoles,
+      catalogRoles
+    };
+  }
+
+  /**
+   * Check if a role is a system role or catalog role
+   */
+  async getRoleType(roleName: string): Promise<'system' | 'catalog' | 'unknown'> {
+    try {
+      const { systemRoles, catalogRoles } = await this.getAllRoles();
+      
+      if (systemRoles.some(role => role.name === roleName)) {
+        return 'system';
+      }
+      
+      if (catalogRoles.some(role => role.name === roleName)) {
+        return 'catalog';
+      }
+      
+      return 'unknown';
+    } catch {
+      return 'unknown';
+    }
+  }
+
+  /**
+   * Get role information by name
+   */
+  async getRoleInfo(roleName: string): Promise<RoleInfo | null> {
+    try {
+      const { systemRoles, catalogRoles } = await this.getAllRoles();
+      const allRoles = [...systemRoles, ...catalogRoles];
+      
+      return allRoles.find(role => role.name === roleName) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Validate if roles exist and are appropriate for the context
+   */
+  async validateRoles(roles: string[], context: 'system' | 'catalog' = 'catalog'): Promise<{
+    valid: string[];
+    invalid: string[];
+    warnings: string[];
+  }> {
+    try {
+      const { systemRoles, catalogRoles } = await this.getAllRoles();
+      const validRoles = context === 'system' ? systemRoles : catalogRoles;
+      const otherRoles = context === 'system' ? catalogRoles : systemRoles;
+      
+      const valid: string[] = [];
+      const invalid: string[] = [];
+      const warnings: string[] = [];
+
+      for (const roleName of roles) {
+        if (validRoles.some(role => role.name === roleName)) {
+          valid.push(roleName);
+        } else if (otherRoles.some(role => role.name === roleName)) {
+          warnings.push(`Role '${roleName}' is a ${context === 'system' ? 'catalog' : 'system'} role, not appropriate for ${context} context`);
+          invalid.push(roleName);
+        } else {
+          invalid.push(roleName);
+        }
+      }
+
+      return { valid, invalid, warnings };
+    } catch {
+      return { valid: [], invalid: roles, warnings: ['Unable to validate roles due to API error'] };
+    }
   }
 }
 

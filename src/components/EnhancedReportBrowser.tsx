@@ -1,23 +1,24 @@
 "use client"
 
 import React, { useState, useCallback } from "react"
-import { 
-  File, 
-  Folder, 
-  Calendar, 
-  Search, 
-  MoreVertical, 
+import {
+  File,
+  Folder,
+  Calendar,
+  Search,
+  MoreVertical,
   Plus,
   Move,
   Trash2,
   Shield,
   X,
+  Info, // Added for tooltips
 } from "lucide-react"
 import { useSSRSBrowser } from "../hooks/useSSRS"
-import type { 
-  FolderItem, 
-  ReportItem, 
-  CreateFolderRequest, 
+import type {
+  FolderItem,
+  ReportItem,
+  CreateFolderRequest,
   MoveItemRequest,
   PolicyInfo,
   RoleInfo,
@@ -48,7 +49,7 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
   selectedReport
 }) => {
   const { folderData, isLoading, refetch } = useSSRSBrowser(currentPath)
-  
+
   // State management
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
   const [activeDialog, setActiveDialog] = useState<DialogType>(null)
@@ -57,15 +58,22 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
-  
+
   // Form states
   const [createFolderForm, setCreateFolderForm] = useState({ folderName: "", description: "" })
   const [moveItemForm, setMoveItemForm] = useState({ targetPath: "" })
   const [policies, setPolicies] = useState<PolicyInfo[]>([])
-  const [roles, setRoles] = useState<RoleInfo[]>([])
+  // Updated state for roles to differentiate between system and catalog
+  const [catalogRoles, setCatalogRoles] = useState<RoleInfo[]>([])
+  const [systemRoles, setSystemRoles] = useState<RoleInfo[]>([])
   const [isLoading_mgmt, setIsLoading_mgmt] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+
+  // Security Dialog specific states
+  const [roleSearchTerm, setRoleSearchTerm] = useState("")
+  const [policySearchTerm, setPolicySearchTerm] = useState("")
+  const [initialPolicies, setInitialPolicies] = useState<PolicyInfo[]>([]) // To track changes
 
   // Search functionality
   const handleSearch = useCallback(async () => {
@@ -121,6 +129,11 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
     setCreateFolderForm({ folderName: "", description: "" })
     setMoveItemForm({ targetPath: "" })
     setPolicies([])
+    setCatalogRoles([]) // Clear roles state on dialog close
+    setSystemRoles([]) // Clear roles state on dialog close
+    setRoleSearchTerm("") // Clear search terms
+    setPolicySearchTerm("") // Clear search terms
+    setInitialPolicies([]) // Clear initial policies
     setError(null)
     setSuccess(null)
   }, [])
@@ -196,14 +209,18 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
 
   const loadSecurity = async (itemPath: string) => {
     setIsLoading_mgmt(true)
+    setError(null)
+    setSuccess(null) // Clear any previous success message
     try {
       const { ssrsApi } = await import("../services/ssrsApi")
-      const [policiesData, rolesData] = await Promise.all([
+      const [policiesData, allRolesData] = await Promise.all([
         ssrsApi.getPolicies(itemPath),
-        ssrsApi.listRoles()
+        ssrsApi.getAllRoles() // Uses the new getAllRoles method
       ])
       setPolicies(policiesData)
-      setRoles(rolesData)
+      setInitialPolicies(JSON.parse(JSON.stringify(policiesData))) // Deep copy to track changes
+      setCatalogRoles(allRolesData.catalogRoles) // Set catalog roles
+      setSystemRoles(allRolesData.systemRoles) // Set system roles
     } catch (err: any) {
       setError("Failed to load security settings: " + err.message)
     } finally {
@@ -215,16 +232,50 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
     if (!selectedItem) return
 
     setIsLoading_mgmt(true)
+    setError(null)
+    setSuccess(null)
+
     try {
       const { ssrsApi } = await import("../services/ssrsApi")
+      // Optional: Add validation here using ssrsApi.validateRoles
+      // Example:
+      // const allAssignedRoles = policies.flatMap(p => p.roles);
+      // const validationResult = await ssrsApi.validateRoles(allAssignedRoles, 'catalog');
+      // if (validationResult.invalid.length > 0) {
+      //   throw new Error(`Invalid roles: ${validationResult.invalid.join(', ')}. Warnings: ${validationResult.warnings.join(', ')}`);
+      // }
+
       await ssrsApi.setPolicies(selectedItem.path, policies)
       setSuccess("Security settings saved successfully")
+      setInitialPolicies(JSON.parse(JSON.stringify(policies))) // Update initial policies after save
     } catch (err: any) {
       setError("Failed to save security settings: " + err.message)
     } finally {
       setIsLoading_mgmt(false)
     }
   }
+
+  // Check for unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    return JSON.stringify(policies) !== JSON.stringify(initialPolicies)
+  }, [policies, initialPolicies])
+
+  // Filtered roles for display in the security dialog
+  const filteredCatalogRoles = catalogRoles.filter(role =>
+    role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
+    role.description.toLowerCase().includes(roleSearchTerm.toLowerCase())
+  )
+
+  const filteredSystemRoles = systemRoles.filter(role =>
+    role.name.toLowerCase().includes(roleSearchTerm.toLowerCase()) ||
+    role.description.toLowerCase().includes(roleSearchTerm.toLowerCase())
+  )
+
+  // Filtered policies for display
+  const filteredPolicies = policies.filter(policy =>
+    policy.groupUserName.toLowerCase().includes(policySearchTerm.toLowerCase())
+  )
+
 
   // Event handlers
   React.useEffect(() => {
@@ -857,13 +908,14 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
       )}
 
       {activeDialog === 'security' && selectedItem && (
-        <DialogOverlay onClose={closeDialog}>
-          <DialogContent title={`Security Settings - ${selectedItem.name}`}>
+        <DialogOverlay onClose={closeDialog} enableOverlayClose={!hasUnsavedChanges()}>
+          <DialogContent title={`Security Settings - ${selectedItem.name}`} large={true}> {/* Increased size */}
             {isLoading_mgmt ? (
-              <div style={{ textAlign: "center", padding: "20px" }}>Loading security settings...</div>
+              <div style={{ textAlign: "center", padding: "40px 20px" }}>Loading security settings...</div>
             ) : (
-              <>
-                <div style={{ marginBottom: "20px" }}>
+              <div style={{ display: "flex", gap: "24px", height: "calc(100% - 60px)" }}> {/* Added flex container */}
+                {/* Left Panel: Policies */}
+                <div style={{ flex: 2, display: "flex", flexDirection: "column", minWidth: "350px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                     <h4 style={{ fontSize: "16px", fontWeight: "600", margin: 0 }}>Policies</h4>
                     <button
@@ -885,13 +937,48 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
                     </button>
                   </div>
 
-                  {policies.length === 0 ? (
-                    <div style={{ color: "#64748b", fontSize: "14px", textAlign: "center", padding: "20px" }}>
-                      No policies configured
+                  {/* Policy Search */}
+                  <div style={{ position: "relative", marginBottom: "12px" }}>
+                    <Search style={{
+                      position: "absolute",
+                      left: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      height: "14px",
+                      width: "14px",
+                      color: "#64748b"
+                    }} />
+                    <input
+                      type="text"
+                      value={policySearchTerm}
+                      onChange={(e) => setPolicySearchTerm(e.target.value)}
+                      placeholder="Search policies by user/group..."
+                      style={{
+                        width: "100%",
+                        padding: "6px 10px 6px 30px",
+                        borderRadius: "4px",
+                        border: "1px solid #d1d5db",
+                        fontSize: "13px"
+                      }}
+                    />
+                  </div>
+
+
+                  {filteredPolicies.length === 0 && policies.length > 0 && (
+                    <div style={{ color: "#64748b", fontSize: "13px", textAlign: "center", padding: "20px", border: "1px dashed #e0e3e7", borderRadius: "4px" }}>
+                      No policies match your search.
                     </div>
-                  ) : (
-                    <div style={{ display: "grid", gap: "12px", maxHeight: "300px", overflowY: "auto" }}>
-                      {policies.map((policy, index) => (
+                  )}
+
+                  {policies.length === 0 && (
+                    <div style={{ color: "#64748b", fontSize: "14px", textAlign: "center", padding: "20px", border: "1px dashed #e0e3e7", borderRadius: "4px" }}>
+                      No policies configured for this item.
+                    </div>
+                  )}
+
+                  <div style={{ flex: 1, overflowY: "auto", paddingRight: "8px" }}> {/* Added scroll */}
+                    <div style={{ display: "grid", gap: "12px" }}>
+                      {filteredPolicies.map((policy, index) => (
                         <div
                           key={index}
                           style={{
@@ -910,14 +997,15 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
                                 newPolicies[index].groupUserName = e.target.value
                                 setPolicies(newPolicies)
                               }}
-                              placeholder="User/Group name"
+                              placeholder="User/Group name (e.g., DOMAIN\User)"
                               style={{
                                 flex: 1,
                                 padding: "6px 8px",
                                 border: "1px solid #d1d5db",
                                 borderRadius: "4px",
                                 fontSize: "14px",
-                                marginRight: "8px"
+                                marginRight: "8px",
+                                backgroundColor: "white"
                               }}
                             />
                             <button
@@ -929,20 +1017,33 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
                                 border: "none",
                                 borderRadius: "4px",
                                 fontSize: "12px",
-                                cursor: "pointer"
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px"
                               }}
                             >
-                              Remove
+                              <Trash2 style={{ height: "12px", width: "12px" }} /> Remove
                             </button>
                           </div>
 
                           <div>
-                            <label style={{ display: "block", marginBottom: "6px", fontSize: "12px", fontWeight: "500" }}>
-                              Roles:
+                            <label style={{ display: "block", marginBottom: "6px", fontSize: "13px", fontWeight: "500", color: "#334155" }}>
+                              Assigned Catalog Roles:
                             </label>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                              {roles.map((role) => (
-                                <label key={role.name} style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px" }}>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                              {catalogRoles.map((role) => ( // Use all catalog roles for assignment checkboxes
+                                <label key={role.name} style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  fontSize: "12px",
+                                  backgroundColor: policy.roles.includes(role.name) ? "#e0e7ff" : "#f1f5f9",
+                                  border: policy.roles.includes(role.name) ? "1px solid #2563eb" : "1px solid #cbd5e1",
+                                  borderRadius: "12px",
+                                  padding: "4px 8px",
+                                  cursor: "pointer"
+                                }}>
                                   <input
                                     type="checkbox"
                                     checked={policy.roles.includes(role.name)}
@@ -955,41 +1056,115 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
                                       }
                                       setPolicies(newPolicies)
                                     }}
+                                    style={{ transform: "scale(0.9)" }}
                                   />
                                   {role.name}
+                                  {role.description && (
+                                    <span title={role.description} style={{ marginLeft: "4px", cursor: "help" }}>
+                                      <Info style={{ height: "12px", width: "12px", color: "#64748b" }} />
+                                    </span>
+                                  )}
                                 </label>
                               ))}
+                              {catalogRoles.length === 0 && (
+                                <span style={{ color: "#64748b", fontSize: "12px" }}>No catalog roles available.</span>
+                              )}
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-
-                <div style={{ marginBottom: "20px" }}>
-                  <h4 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "8px" }}>Available Roles</h4>
-                  <div style={{ maxHeight: "150px", overflowY: "auto" }}>
-                    {roles.map((role) => (
-                      <div
-                        key={role.name}
-                        style={{
-                          padding: "8px 12px",
-                          border: "1px solid #e0e3e7",
-                          borderRadius: "4px",
-                          backgroundColor: "#fff",
-                          marginBottom: "4px"
-                        }}
-                      >
-                        <div style={{ fontSize: "14px", fontWeight: "500" }}>{role.name}</div>
-                        <div style={{ fontSize: "12px", color: "#64748b" }}>{role.description}</div>
-                      </div>
-                    ))}
                   </div>
                 </div>
-              </>
+
+                {/* Right Panel: Available Roles */}
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: "250px" }}>
+                  <h4 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "8px" }}>Available Roles</h4>
+
+                  {/* Role Search */}
+                  <div style={{ position: "relative", marginBottom: "12px" }}>
+                    <Search style={{
+                      position: "absolute",
+                      left: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      height: "14px",
+                      width: "14px",
+                      color: "#64748b"
+                    }} />
+                    <input
+                      type="text"
+                      value={roleSearchTerm}
+                      onChange={(e) => setRoleSearchTerm(e.target.value)}
+                      placeholder="Search roles..."
+                      style={{
+                        width: "100%",
+                        padding: "6px 10px 6px 30px",
+                        borderRadius: "4px",
+                        border: "1px solid #d1d5db",
+                        fontSize: "13px"
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ flex: 1, overflowY: "auto", border: "1px solid #e0e3e7", borderRadius: "4px", padding: "8px" }}> {/* Added scroll */}
+                    {filteredCatalogRoles.length > 0 && (
+                      <div style={{ marginBottom: "12px" }}>
+                        <h5 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px 0", color: "#1e40af" }}>Catalog Roles</h5>
+                        {filteredCatalogRoles.map((role) => (
+                          <div
+                            key={role.name}
+                            style={{
+                              padding: "6px 10px",
+                              backgroundColor: "#fff",
+                              marginBottom: "4px",
+                              borderRadius: "4px",
+                              border: "1px solid #f3f4f6"
+                            }}
+                          >
+                            <div style={{ fontSize: "13px", fontWeight: "500" }}>{role.name}</div>
+                            <div style={{ fontSize: "11px", color: "#64748b" }}>{role.description}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {filteredSystemRoles.length > 0 && (
+                      <div>
+                        <h5 style={{ fontSize: "14px", fontWeight: "600", margin: "0 0 6px 0", color: "#64748b" }}>System Roles</h5>
+                        <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px", marginBottom: "8px" }}>
+                          *System roles cannot be assigned to item policies directly.
+                        </p>
+                        {filteredSystemRoles.map((role) => (
+                          <div
+                            key={role.name}
+                            style={{
+                              padding: "6px 10px",
+                              backgroundColor: "#fff",
+                              marginBottom: "4px",
+                              borderRadius: "4px",
+                              border: "1px solid #f3f4f6"
+                            }}
+                          >
+                            <div style={{ fontSize: "13px", fontWeight: "500" }}>{role.name}</div>
+                            <div style={{ fontSize: "11px", color: "#64748b" }}>{role.description}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {filteredCatalogRoles.length === 0 && filteredSystemRoles.length === 0 && (
+                      <div style={{ fontSize: "13px", color: "#64748b", textAlign: "center", padding: "20px" }}>No roles match your search criteria.</div>
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
             <DialogActions>
+              {hasUnsavedChanges() && (
+                <span style={{ color: "#ef4444", fontSize: "13px", marginRight: "auto", display: "flex", alignItems: "center", gap: "4px" }}>
+                  <Info style={{ height: "14px", width: "14px" }} /> Unsaved changes
+                </span>
+              )}
               <button
                 onClick={closeDialog}
                 style={{
@@ -1004,15 +1179,15 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
               </button>
               <button
                 onClick={saveSecurity}
-                disabled={isLoading_mgmt}
+                disabled={isLoading_mgmt || !hasUnsavedChanges()} // Disable if no changes or loading
                 style={{
                   padding: "8px 16px",
                   backgroundColor: "#2563eb",
                   color: "white",
                   border: "none",
                   borderRadius: "6px",
-                  cursor: isLoading_mgmt ? "not-allowed" : "pointer",
-                  opacity: isLoading_mgmt ? 0.6 : 1
+                  cursor: isLoading_mgmt || !hasUnsavedChanges() ? "not-allowed" : "pointer",
+                  opacity: isLoading_mgmt || !hasUnsavedChanges() ? 0.6 : 1
                 }}
               >
                 {isLoading_mgmt ? "Saving..." : "Save"}
@@ -1026,7 +1201,7 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
 }
 
 // Helper Components
-const DialogOverlay: React.FC<{ children: React.ReactNode; onClose: () => void }> = ({ children, onClose }) => (
+const DialogOverlay: React.FC<{ children: React.ReactNode; onClose: () => void; enableOverlayClose?: boolean }> = ({ children, onClose, enableOverlayClose = true }) => (
   <div
     style={{
       position: "fixed",
@@ -1034,41 +1209,54 @@ const DialogOverlay: React.FC<{ children: React.ReactNode; onClose: () => void }
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.5)",
+      backgroundColor: "rgba(0,0,0,0.6)", // Slightly darker overlay
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      zIndex: 1000
+      zIndex: 1000,
+      backdropFilter: "blur(2px)", // Added blur effect
     }}
-    onClick={onClose}
+    onClick={enableOverlayClose ? onClose : undefined} // Conditionally allow closing by clicking overlay
   >
-    <div onClick={(e) => e.stopPropagation()}>
+    <div onClick={(e) => e.stopPropagation()} style={{ transition: "all 0.3s ease-out", transform: "scale(1)" }}> {/* Added animation */}
       {children}
     </div>
   </div>
 )
 
-const DialogContent: React.FC<{ children: React.ReactNode; title: string }> = ({ children, title }) => (
+const DialogContent: React.FC<{ children: React.ReactNode; title: string; large?: boolean }> = ({ children, title, large = false }) => (
   <div
     style={{
       backgroundColor: "white",
       padding: "24px",
       borderRadius: "8px",
-      width: "500px",
+      width: large ? "900px" : "500px", // Larger width for security dialog
       maxWidth: "90vw",
-      maxHeight: "80vh",
-      overflowY: "auto"
+      maxHeight: "90vh", // Increased max height
+      overflowY: "hidden", // Changed to hidden to manage internal scrolls
+      display: "flex",
+      flexDirection: "column",
+      boxShadow: "0 8px 30px rgba(0,0,0,0.2)" // Stronger shadow
     }}
   >
-    <h3 style={{ marginTop: 0, marginBottom: "20px", fontSize: "18px", fontWeight: "600" }}>
+    <h3 style={{ marginTop: 0, marginBottom: "20px", fontSize: "18px", fontWeight: "600", borderBottom: "1px solid #eee", paddingBottom: "15px" }}>
       {title}
     </h3>
-    {children}
+    <div style={{ flex: 1, overflowY: "hidden" }}> {/* Content area for internal scrolling */}
+      {children}
+    </div>
   </div>
 )
 
 const DialogActions: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "20px" }}>
+  <div style={{
+    display: "flex",
+    gap: "12px",
+    justifyContent: "flex-end",
+    marginTop: "20px",
+    paddingTop: "15px",
+    borderTop: "1px solid #eee",
+  }}>
     {children}
   </div>
 )
