@@ -4,7 +4,6 @@
 import type React from "react"
 import { Folder, FolderOpen, Home } from "lucide-react"
 import { useSSRSBrowser } from "../hooks/useSSRS"
-import { ConnectionStatus } from "./ConnectionStatus"
 
 interface SidebarNavigationProps {
   selectedPath: string
@@ -50,10 +49,6 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ selectedPa
           <FolderOpen style={{ marginRight: "7px", height: "17px", width: "17px", color: "#64748b" }} />
           Report Folders
         </h3>
-
-        <div style={{ marginBottom: "8px" }}>
-          <ConnectionStatus />
-        </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
           {folderItems.map((item) => {

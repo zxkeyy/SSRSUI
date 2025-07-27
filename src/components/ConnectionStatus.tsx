@@ -4,17 +4,17 @@ import type React from "react"
 import { useSSRSConnection } from "../hooks/useSSRS"
 
 export const ConnectionStatus: React.FC = () => {
-  const { connectionStatus, isLoading, error, testConnection } = useSSRSConnection()
+  const { connectionInfo, isConnecting, error, testConnection } = useSSRSConnection()
 
   const getStatusColor = () => {
     if (error) return "#ef4444"
-    if (connectionStatus) return "#10b981"
+    if (connectionInfo) return "#10b981"
     return "#f59e0b"
   }
 
   const getStatusText = () => {
     if (error) return "Connection Failed"
-    if (connectionStatus) return "Connected"
+    if (connectionInfo) return "Connected"
     return "Connecting..."
   }
 
@@ -44,30 +44,30 @@ export const ConnectionStatus: React.FC = () => {
       />
       <div style={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0, flexWrap: "wrap", gap: 4 }}>
         <span style={{ fontWeight: 600, color: "#1e293b", minWidth: 0, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", maxWidth: "100%" }}>{getStatusText()}</span>
-        {connectionStatus && (
+        {connectionInfo && (
           <span style={{ fontSize: "12px", color: "#64748b", marginLeft: 8, minWidth: 0, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", maxWidth: "100%" }}>
-            ({connectionStatus.reportCount} reports, {connectionStatus.folderCount} folders)
+            ({connectionInfo.reportCount} reports, {connectionInfo.folderCount} folders)
           </span>
         )}
       </div>
       <button
         onClick={testConnection}
-        disabled={isLoading}
+        disabled={isConnecting}
         style={{
           padding: "2px 10px",
           fontSize: "12px",
-          backgroundColor: isLoading ? "#a5b4fc" : "#2563eb",
+          backgroundColor: isConnecting ? "#a5b4fc" : "#2563eb",
           color: "white",
           border: "none",
           borderRadius: "3px",
-          cursor: isLoading ? "not-allowed" : "pointer",
-          opacity: isLoading ? 0.7 : 1,
+          cursor: isConnecting ? "not-allowed" : "pointer",
+          opacity: isConnecting ? 0.7 : 1,
           marginLeft: 12,
           height: 26,
           minWidth: 48
         }}
       >
-        {isLoading ? "Testing..." : "Test"}
+        {isConnecting ? "Testing..." : "Test"}
       </button>
     </div>
   )

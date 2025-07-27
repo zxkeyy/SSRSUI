@@ -1,10 +1,10 @@
 import type React from "react"
-import { useUserInfo } from "../hooks/useSSRS"
+import { useSSRSConnection } from "../hooks/useSSRS"
 
 export const UserInfo: React.FC = () => {
-  const { userInfo, isLoading, error } = useUserInfo()
+  const { userInfo, isConnecting, error } = useSSRSConnection()
 
-  if (isLoading) {
+  if (isConnecting) {
     return (
       <div
         style={{
