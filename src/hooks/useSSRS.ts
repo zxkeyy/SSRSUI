@@ -1,139 +1,104 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ssrsApi } from '../services/ssrsApi';
+import { useState, useEffect, useCallback } from 'react'
 import type {
-  TestConnectionResponse,
   BrowseResponse,
   ReportParameter,
+  RenderFormat,
   UserInfo,
-  RenderFormat
-} from '../types/api';
+  TestConnectionResponse
+} from '../types/api'
 
-/**
- * Hook for managing SSRS connection status
- */
-export function useSSRSConnection() {
-  const [connectionStatus, setConnectionStatus] = useState<TestConnectionResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+// Enhanced hook with refetch capability
+export const useSSRSBrowser = (folderPath: string) => {
+  const [folderData, setFolderData] = useState<BrowseResponse | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const testConnection = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const fetchData = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
     
     try {
-      const status = await ssrsApi.testConnection();
-      setConnectionStatus(status);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Connection test failed');
+      const { ssrsApi } = await import('../services/ssrsApi')
+      const data = await ssrsApi.browseFolder(folderPath)
+      setFolderData(data)
+    } catch (err: any) {
+      setError(err.message || 'Failed to load folder contents')
+      setFolderData(null)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, []);
+  }, [folderPath])
 
   useEffect(() => {
-    testConnection();
-  }, [testConnection]);
-
-  return {
-    connectionStatus,
-    isLoading,
-    error,
-    testConnection
-  };
-}
-
-/**
- * Hook for browsing SSRS folders and reports
- */
-export function useSSRSBrowser(currentPath: string) {
-  const [folderData, setFolderData] = useState<BrowseResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const browseFolder = useCallback(async (folderPath: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await ssrsApi.browseFolder(folderPath);
-      setFolderData(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to browse folder');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (currentPath) {
-      browseFolder(currentPath);
-    }
-  }, [currentPath, browseFolder]);
+    fetchData()
+  }, [fetchData])
 
   return {
     folderData,
     isLoading,
     error,
-    refreshFolder: () => browseFolder(currentPath)
-  };
+    refetch: fetchData
+  }
 }
 
-/**
- * Hook for managing report parameters
- */
-export function useReportParameters(reportPath: string | null) {
-  const [parameters, setParameters] = useState<ReportParameter[]>([]);
-  const [parameterValues, setParameterValues] = useState<Record<string, any>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const useReportParameters = (reportPath: string | null) => {
+  const [parameters, setParameters] = useState<ReportParameter[]>([])
+  const [parameterValues, setParameterValues] = useState<Record<string, any>>({})
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const loadParameters = useCallback(async (path: string) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const params = await ssrsApi.getReportParameters(path);
-      setParameters(params);
-      
-      // Initialize parameter values with defaults
-      const defaultValues: Record<string, any> = {};
-      params.forEach(param => {
-        if (param.defaultValue !== undefined) {
-          defaultValues[param.name] = param.defaultValue;
-        }
-      });
-      setParameterValues(defaultValues);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load parameters');
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (!reportPath) {
+      setParameters([])
+      setParameterValues({})
+      return
     }
-  }, []);
+
+    const fetchParameters = async () => {
+      setIsLoading(true)
+      setError(null)
+      
+      try {
+        const { ssrsApi } = await import('../services/ssrsApi')
+        const params = await ssrsApi.getReportParameters(reportPath)
+        setParameters(params)
+        
+        // Initialize parameter values with defaults
+        const initialValues: Record<string, any> = {}
+        params.forEach(param => {
+          if (param.defaultValue !== undefined) {
+            initialValues[param.name] = param.defaultValue
+          }
+        })
+        setParameterValues(initialValues)
+      } catch (err: any) {
+        setError(err.message || 'Failed to load report parameters')
+        setParameters([])
+        setParameterValues({})
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchParameters()
+  }, [reportPath])
 
   const updateParameterValue = useCallback((name: string, value: any) => {
     setParameterValues(prev => ({
       ...prev,
       [name]: value
-    }));
-  }, []);
+    }))
+  }, [])
 
   const resetParameters = useCallback(() => {
-    const defaultValues: Record<string, any> = {};
+    const initialValues: Record<string, any> = {}
     parameters.forEach(param => {
       if (param.defaultValue !== undefined) {
-        defaultValues[param.name] = param.defaultValue;
+        initialValues[param.name] = param.defaultValue
       }
-    });
-    setParameterValues(defaultValues);
-  }, [parameters]);
-
-  useEffect(() => {
-    if (reportPath) {
-      loadParameters(reportPath);
-    } else {
-      setParameters([]);
-      setParameterValues({});
-    }
-  }, [reportPath, loadParameters]);
+    })
+    setParameterValues(initialValues)
+  }, [parameters])
 
   return {
     parameters,
@@ -142,34 +107,32 @@ export function useReportParameters(reportPath: string | null) {
     error,
     updateParameterValue,
     resetParameters
-  };
+  }
 }
 
-/**
- * Hook for rendering and downloading reports
- */
-export function useReportRenderer() {
-  const [isRendering, setIsRendering] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const useReportRenderer = () => {
+  const [isRendering, setIsRendering] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const renderReport = useCallback(async (
     reportPath: string,
     parameters: Record<string, any> = {},
     format: RenderFormat = 'PDF'
   ): Promise<Blob | null> => {
-    setIsRendering(true);
-    setError(null);
-    
+    setIsRendering(true)
+    setError(null)
+
     try {
-      const blob = await ssrsApi.renderReport({ reportPath, parameters }, format);
-      return blob;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to render report');
-      return null;
+      const { ssrsApi } = await import('../services/ssrsApi')
+      const blob = await ssrsApi.renderReport({ reportPath, parameters }, format)
+      return blob
+    } catch (err: any) {
+      setError(err.message || 'Failed to render report')
+      return null
     } finally {
-      setIsRendering(false);
+      setIsRendering(false)
     }
-  }, []);
+  }, [])
 
   const downloadReport = useCallback(async (
     reportPath: string,
@@ -177,56 +140,61 @@ export function useReportRenderer() {
     format: RenderFormat = 'PDF',
     filename?: string
   ) => {
-    setIsRendering(true);
-    setError(null);
-    
+    setIsRendering(true)
+    setError(null)
+
     try {
-      await ssrsApi.downloadReport(reportPath, parameters, format, filename);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to download report');
+      const { ssrsApi } = await import('../services/ssrsApi')
+      await ssrsApi.downloadReport(reportPath, parameters, format, filename)
+    } catch (err: any) {
+      setError(err.message || 'Failed to download report')
     } finally {
-      setIsRendering(false);
+      setIsRendering(false)
     }
-  }, []);
+  }, [])
 
   return {
-    isRendering,
-    error,
     renderReport,
-    downloadReport
-  };
+    downloadReport,
+    isRendering,
+    error
+  }
 }
 
-/**
- * Hook for user information
- */
-export function useUserInfo() {
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export const useSSRSConnection = () => {
+  const [connectionInfo, setConnectionInfo] = useState<TestConnectionResponse | null>(null)
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const loadUserInfo = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
+  const testConnection = useCallback(async () => {
+    setIsConnecting(true)
+    setError(null)
+
     try {
-      const info = await ssrsApi.getCurrentUser();
-      setUserInfo(info);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load user information');
+      const { ssrsApi } = await import('../services/ssrsApi')
+      const [connInfo, user] = await Promise.all([
+        ssrsApi.testConnection(),
+        ssrsApi.getCurrentUser()
+      ])
+      setConnectionInfo(connInfo)
+      setUserInfo(user)
+    } catch (err: any) {
+      setError(err.message || 'Failed to connect to SSRS')
     } finally {
-      setIsLoading(false);
+      setIsConnecting(false)
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    loadUserInfo();
-  }, [loadUserInfo]);
+    testConnection()
+  }, [testConnection])
 
   return {
+    connectionInfo,
     userInfo,
-    isLoading,
+    isConnecting,
     error,
-    refreshUserInfo: loadUserInfo
-  };
+    testConnection
+  }
 }
