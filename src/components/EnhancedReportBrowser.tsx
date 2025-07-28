@@ -536,19 +536,6 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
                           {new Date(result.modifiedDate).toLocaleDateString()}
                         </div>
                       </div>
-                      <div style={{
-                        position: "absolute",
-                        top: "8px",
-                        right: "8px",
-                        padding: "2px 6px",
-                        fontSize: "10px",
-                        backgroundColor: result.type === "Report" ? "#dbeafe" : "#f3f4f6",
-                        color: result.type === "Report" ? "#1e40af" : "#374151",
-                        borderRadius: "8px",
-                        fontWeight: "500"
-                      }}>
-                        {result.type}
-                      </div>
                     </div>
                   );
                 })
