@@ -1047,13 +1047,19 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
                                     type="checkbox"
                                     checked={policy.roles.includes(role.name)}
                                     onChange={(e) => {
-                                      const newPolicies = [...policies]
+                                      const newPolicies = [...policies];
+                                      // Only add the role name, not description
                                       if (e.target.checked) {
-                                        newPolicies[index].roles = [...new Set([...policy.roles, role.name])]
+                                        newPolicies[index].roles = [
+                                          ...new Set([
+                                            ...policy.roles.filter(r => catalogRoles.some(roleObj => roleObj.name === r)),
+                                            role.name
+                                          ])
+                                        ];
                                       } else {
-                                        newPolicies[index].roles = policy.roles.filter(r => r !== role.name)
+                                        newPolicies[index].roles = policy.roles.filter(r => r === role.name ? false : true);
                                       }
-                                      setPolicies(newPolicies)
+                                      setPolicies(newPolicies);
                                     }}
                                     style={{ transform: "scale(0.9)" }}
                                   />
