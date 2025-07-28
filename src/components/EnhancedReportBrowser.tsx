@@ -454,97 +454,108 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
             {/* Search Results or Folder Contents */}
             {isInSearchMode ? (
               // Search Results
-              searchResults.map((result) => {
-                const isSelected = selectedReport === result.path && result.type === 'Report';
-                return (
-                  <div
-                    key={result.path}
-                    onClick={() => result.type === "Report" && onReportSelect(result.path)}
-                    onContextMenu={(e) => handleContextMenu(e, result.type === 'Report' ? 'report' : 'folder', result as any)}
-                    style={{
-                      padding: "18px 18px 12px 18px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                      border: isSelected ? "2px solid #2563eb" : "1px solid #e0e8f0",
-                      background: isSelected ? "#e0e7ff" : "#fff",
-                      boxShadow: isSelected ? "0 2px 6px rgba(37,99,235,0.08)" : "0 1px 2px rgba(0,0,0,0.02)",
-                      minHeight: "90px",
-                      position: "relative"
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
-                      {result.type === 'Report' ? (
-                        <File style={{
-                          marginRight: "10px",
-                          height: "18px",
-                          width: "18px",
-                          color: isSelected ? "#2563eb" : "#0ea5e9"
-                        }} />
-                      ) : (
-                        <Folder style={{
-                          marginRight: "10px",
-                          height: "18px",
-                          width: "18px",
-                          color: "#64748b"
-                        }} />
-                      )}
-                      <span style={{
-                        fontSize: "15px",
-                        fontWeight: 600,
-                        color: isSelected ? "#2563eb" : "#1e293b"
+              searchResults.length === 0 ? (
+                <div style={{ gridColumn: "1/-1", color: "#64748b", fontSize: 15, textAlign: "center", padding: "32px 0" }}>
+                  No results found for your search.
+                </div>
+              ) : (
+                searchResults.map((result) => {
+                  const isSelected = selectedReport === result.path && result.type === 'Report';
+                  return (
+                    <div
+                      key={result.path}
+                      onClick={() => result.type === "Report" && onReportSelect(result.path)}
+                      onContextMenu={(e) => handleContextMenu(e, result.type === 'Report' ? 'report' : 'folder', result as any)}
+                      style={{
+                        padding: "18px 18px 12px 18px",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        border: isSelected ? "2px solid #2563eb" : "1px solid #e0e8f0",
+                        background: isSelected ? "#e0e7ff" : "#fff",
+                        boxShadow: isSelected ? "0 2px 6px rgba(37,99,235,0.08)" : "0 1px 2px rgba(0,0,0,0.02)",
+                        minHeight: "90px",
+                        position: "relative"
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
+                        {result.type === 'Report' ? (
+                          <File style={{
+                            marginRight: "10px",
+                            height: "18px",
+                            width: "18px",
+                            color: isSelected ? "#2563eb" : "#0ea5e9"
+                          }} />
+                        ) : (
+                          <Folder style={{
+                            marginRight: "10px",
+                            height: "18px",
+                            width: "18px",
+                            color: "#64748b"
+                          }} />
+                        )}
+                        <span style={{
+                          fontSize: "15px",
+                          fontWeight: 600,
+                          color: isSelected ? "#2563eb" : "#1e293b"
+                        }}>
+                          {result.name}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleContextMenu(e, result.type === 'Report' ? 'report' : 'folder', result as any)
+                          }}
+                          style={{
+                            marginLeft: "auto",
+                            background: "none",
+                            border: "none",
+                            cursor: "pointer",
+                            padding: "4px",
+                            borderRadius: "4px"
+                          }}
+                        >
+                          <MoreVertical style={{ height: "16px", width: "16px", color: "#64748b" }} />
+                        </button>
+                      </div>
+                      <div style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        fontSize: "12px",
+                        color: "#64748b",
+                        marginLeft: "28px"
                       }}>
-                        {result.name}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleContextMenu(e, result.type === 'Report' ? 'report' : 'folder', result as any)
-                        }}
-                        style={{
-                          marginLeft: "auto",
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          padding: "4px",
-                          borderRadius: "4px"
-                        }}
-                      >
-                        <MoreVertical style={{ height: "16px", width: "16px", color: "#64748b" }} />
-                      </button>
-                    </div>
-                    <div style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      fontSize: "12px",
-                      color: "#64748b",
-                      marginLeft: "28px"
-                    }}>
-                      <div style={{ display: "flex", alignItems: "center" }}>
-                        <Calendar style={{ marginRight: "4px", height: "13px", width: "13px" }} />
-                        {new Date(result.modifiedDate).toLocaleDateString()}
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                          <Calendar style={{ marginRight: "4px", height: "13px", width: "13px" }} />
+                          {new Date(result.modifiedDate).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div style={{
+                        position: "absolute",
+                        top: "8px",
+                        right: "8px",
+                        padding: "2px 6px",
+                        fontSize: "10px",
+                        backgroundColor: result.type === "Report" ? "#dbeafe" : "#f3f4f6",
+                        color: result.type === "Report" ? "#1e40af" : "#374151",
+                        borderRadius: "8px",
+                        fontWeight: "500"
+                      }}>
+                        {result.type}
                       </div>
                     </div>
-                    <div style={{
-                      position: "absolute",
-                      top: "8px",
-                      right: "8px",
-                      padding: "2px 6px",
-                      fontSize: "10px",
-                      backgroundColor: result.type === "Report" ? "#dbeafe" : "#f3f4f6",
-                      color: result.type === "Report" ? "#1e40af" : "#374151",
-                      borderRadius: "8px",
-                      fontWeight: "500"
-                    }}>
-                      {result.type}
-                    </div>
-                  </div>
-                );
-              })
+                  );
+                })
+              )
             ) : (
               // Folder Contents
               <>
+                {folderData?.folders?.length === 0 && folderData?.reports?.length === 0 && (
+                  <div style={{ gridColumn: "1/-1", color: "#64748b", fontSize: 15, textAlign: "center", padding: "32px 0" }}>
+                    This folder is empty.
+                  </div>
+                )}
                 {folderData?.folders?.map((folder) => (
                   <div
                     key={folder.path}
