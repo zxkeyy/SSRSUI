@@ -69,8 +69,31 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({ reportPath }) => {
     // eslint-disable-next-line
   }, [reportPath, JSON.stringify(parameterValues), allParamsFilled]);
 
+  // Get the report title from the path (last segment)
+  const reportTitle = reportPath ? reportPath.split("/").filter(Boolean).pop() : null;
+
   return (
     <div className="professional-card" style={{ overflow: "hidden", padding: 0, minHeight: 420 }}>
+      {/* Report Title Header */}
+      {reportTitle && (
+        <div style={{
+          padding: "18px 18px 18px 18px",
+          borderBottom: "1px solid #e0e8f0",
+          marginBottom: 0,
+          background: "#f9fafb"
+        }}>
+          <h2 style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: "#1e293b",
+            margin: 0,
+            letterSpacing: "-0.01em",
+            textOverflow: "ellipsis",
+            overflow: "hidden",
+            whiteSpace: "nowrap"
+          }}>{reportTitle}</h2>
+        </div>
+      )}
       <div style={{ padding: "18px 18px 0 18px" }}>
         {/* Header: Parameters and Download */}
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: 24, marginBottom: 18 }}>
@@ -191,7 +214,7 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({ reportPath }) => {
         )}
 
         {/* Report Preview */}
-        <div style={{ marginTop: 18, minHeight: screen.height, background: "#f8fafc", borderRadius: 6, border: "1px solid #e0e8f0", padding: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ marginTop: 18, minHeight: screen.height, background: "#f8fafc", borderRadius: 6, border: "1px solid #e0e8f0", padding: 12, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
           {!reportPath ? (
             <div style={{ color: "#64748b", fontSize: 15, textAlign: "center" }}>Select a report to preview</div>
           ) : !allParamsFilled ? (
@@ -199,12 +222,32 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({ reportPath }) => {
           ) : previewLoading ? (
             <div style={{ color: "#64748b", fontSize: 15 }}>Loading preview...</div>
           ) : previewUrl ? (
-            <iframe
-              title="Report Preview"
-              src={previewUrl}
-              
-              style={{ width: "100%", minHeight: screen.height, height: "130vh", border: "none", borderRadius: 4, background: "#fff" }}
-            />
+            <>
+              <div style={{ width: "100%", display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+                <button
+                  onClick={() => window.open(previewUrl, '_blank', 'noopener,noreferrer')}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 5,
+                    border: "1px solid #2563eb",
+                    background: "#fff",
+                    color: "#2563eb",
+                    fontWeight: 600,
+                    fontSize: 13,
+                    cursor: "pointer",
+                    marginBottom: 2
+                  }}
+                  title="Open in new tab"
+                >
+                  Open in New Tab
+                </button>
+              </div>
+              <iframe
+                title="Report Preview"
+                src={previewUrl}
+                style={{ width: "100%", minHeight: screen.height, height: "130vh", border: "none", borderRadius: 4, background: "#fff" }}
+              />
+            </>
           ) : (
             <div style={{ color: "#64748b", fontSize: 15 }}>No preview available</div>
           )}

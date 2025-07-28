@@ -714,19 +714,7 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
 
       {/* Context Menu */}
       {contextMenu && (
-        <div
-          style={{
-            position: "fixed",
-            top: contextMenu.y,
-            left: contextMenu.x,
-            backgroundColor: "white",
-            border: "1px solid #e0e3e7",
-            borderRadius: "6px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-            zIndex: 1000,
-            minWidth: "150px"
-          }}
-        >
+        <ContextMenuPopup x={contextMenu.x} y={contextMenu.y}>
           <button
             onClick={() => openDialog('moveItem', contextMenu.item!)}
             style={{
@@ -786,7 +774,7 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
             <Trash2 style={{ height: "16px", width: "16px" }} />
             Delete
           </button>
-        </div>
+        </ContextMenuPopup>
       )}
 
       {/* Dialogs */}
@@ -987,7 +975,7 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
                     </div>
                   )}
 
-                  <div style={{ flex: 1, overflowY: "auto", paddingRight: "8px" }}> {/* Added scroll */}
+                  <div style={{ flex: 1, overflowY: "auto", paddingRight: "8px", maxHeight: "60vh"}}> {/* Added scroll */}
                     <div style={{ display: "grid", gap: "12px" }}>
                       {filteredPolicies.map((policy, index) => (
                         <div
@@ -1243,8 +1231,8 @@ const DialogContent: React.FC<{ children: React.ReactNode; title: string; large?
       borderRadius: "8px",
       width: large ? "900px" : "500px", // Larger width for security dialog
       maxWidth: "90vw",
-      maxHeight: "90vh", // Increased max height
-      overflowY: "hidden", // Changed to hidden to manage internal scrolls
+      maxHeight: "95vh", // Increased max height
+      overflowY: "hidden", // Prevent overflow
       display: "flex",
       flexDirection: "column",
       boxShadow: "0 8px 30px rgba(0,0,0,0.2)" // Stronger shadow
@@ -1271,3 +1259,50 @@ const DialogActions: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     {children}
   </div>
 )
+
+type ContextMenuPopupProps = {
+  x: number;
+  y: number;
+  children: React.ReactNode;
+};
+
+export function ContextMenuPopup({ x, y, children }: ContextMenuPopupProps) {
+  const menuRef = React.useRef<HTMLDivElement>(null);
+  const [pos, setPos] = React.useState({ left: x, top: y });
+
+  React.useLayoutEffect(() => {
+    const menu = menuRef.current;
+    if (menu) {
+      const { width, height } = menu.getBoundingClientRect();
+      let left = x;
+      let top = y;
+      const padding = 20;
+      if (left + width + padding > window.innerWidth) {
+        left = window.innerWidth - width - padding;
+      }
+      if (top + height + padding > window.innerHeight) {
+        top = window.innerHeight - height - padding;
+      }
+      setPos({ left: Math.max(left, padding), top: Math.max(top, padding) });
+    }
+  }, [x, y, children]);
+
+  return (
+    <div
+      ref={menuRef}
+      style={{
+        position: "fixed",
+        left: pos.left,
+        top: pos.top,
+        backgroundColor: "white",
+        border: "1px solid #e0e3e7",
+        borderRadius: "6px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+        zIndex: 1000,
+        minWidth: "150px"
+      }}
+    >
+      {children}
+    </div>
+  );
+}
