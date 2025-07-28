@@ -45,14 +45,17 @@ export const useReportParameters = (reportPath: string | null) => {
   const [parameters, setParameters] = useState<ReportParameter[]>([])
   const [parameterValues, setParameterValues] = useState<Record<string, any>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!reportPath) {
       setParameters([])
       setParameterValues({})
+      setIsReady(false)
       return
     }
+    setIsReady(false)
 
     const fetchParameters = async () => {
       setIsLoading(true)
@@ -62,6 +65,7 @@ export const useReportParameters = (reportPath: string | null) => {
         const { ssrsApi } = await import('../services/ssrsApi')
         const params = await ssrsApi.getReportParameters(reportPath)
         setParameters(params)
+        setIsReady(true)
         
         // Initialize parameter values with defaults
         const initialValues: Record<string, any> = {}
@@ -104,6 +108,7 @@ export const useReportParameters = (reportPath: string | null) => {
     parameters,
     parameterValues,
     isLoading,
+    isReady,
     error,
     updateParameterValue,
     resetParameters

@@ -23,6 +23,7 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({ reportPath }) => {
     parameters,
     parameterValues,
     isLoading: paramsLoading,
+    isReady: paramsReady,
     error: paramsError,
     updateParameterValue,
     // resetParameters
@@ -38,7 +39,6 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({ reportPath }) => {
 
   const allParamsFilled = parameters.length === 0 || parameters.every(
     (param) => {
-      // If nullable is false, treat as required
       const required = param.nullable === false;
       const value = parameterValues[param.name];
       if (!required) return true;
@@ -65,9 +65,13 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({ reportPath }) => {
 
   React.useEffect(() => {
     setPreviewUrl(null);
-    if (reportPath && allParamsFilled) handlePreview();
     // eslint-disable-next-line
-  }, [reportPath, JSON.stringify(parameterValues), allParamsFilled]);
+  }, [reportPath]);
+
+  React.useEffect(() => {
+    if (reportPath && allParamsFilled && paramsReady) handlePreview();
+    // eslint-disable-next-line
+  }, [JSON.stringify(parameterValues), allParamsFilled, paramsReady]);
 
   // Get the report title from the path (last segment)
   const reportTitle = reportPath ? reportPath.split("/").filter(Boolean).pop() : null;

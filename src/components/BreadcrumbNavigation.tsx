@@ -55,10 +55,14 @@ export const BreadcrumbNavigation: React.FC<BreadcrumbNavigationProps> = ({ curr
             )}
             {index === breadcrumbs.length - 1 ? (
               <span style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "6px 8px",
                 fontSize: "13px",
                 fontWeight: 600,
                 color: "#1e293b"
               }}>
+                {index === 0 && <Home style={{ marginRight: "6px", height: "14px", width: "14px" }} />}
                 {breadcrumb.name}
               </span>
             ) : (
