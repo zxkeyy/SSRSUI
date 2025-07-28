@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useCallback } from "react"
+// Removed Star, StarOff imports (minimalistic, no star in cards)
 import {
   File,
   Folder,
@@ -30,6 +31,8 @@ interface EnhancedReportBrowserProps {
   onPathChange: (path: string) => void;
   onReportSelect: (reportPath: string) => void;
   selectedReport?: string | null;
+  favoriteReports?: string[];
+  onToggleFavorite?: (reportPath: string) => void;
 }
 
 type ContextMenuType = 'folder' | 'report' | null;
@@ -46,7 +49,9 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
   currentPath,
   onPathChange,
   onReportSelect,
-  selectedReport
+  selectedReport,
+  favoriteReports = [],
+  onToggleFavorite
 }) => {
   const { folderData, isLoading, refetch } = useSSRSBrowser(currentPath)
 
@@ -669,10 +674,9 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
                         <span style={{
                           fontSize: "15px",
                           fontWeight: 600,
-                          color: isSelected ? "#2563eb" : "#1e293b"
-                        }}>
-                          {report.name}
-                        </span>
+                          color: isSelected ? "#2563eb" : "#1e293b",
+                          flex: 1
+                        }}>{report.name}</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
@@ -715,6 +719,31 @@ export const EnhancedReportBrowser: React.FC<EnhancedReportBrowserProps> = ({
       {/* Context Menu */}
       {contextMenu && (
         <ContextMenuPopup x={contextMenu.x} y={contextMenu.y}>
+          {/* Favorite/Unfavorite for reports */}
+          {contextMenu.type === 'report' && contextMenu.item && onToggleFavorite && (
+            <button
+              onClick={() => {
+                if (contextMenu.item) {
+                  onToggleFavorite(contextMenu.item.path)
+                }
+                closeContextMenu()
+              }}
+              style={{
+                display: 'block',
+                width: '100%',
+                background: 'none',
+                border: 'none',
+                textAlign: 'left',
+                padding: '8px 16px',
+                fontSize: '14px',
+                color: contextMenu.item && favoriteReports.includes(contextMenu.item.path) ? '#b91c1c' : '#2563eb',
+                cursor: 'pointer',
+                borderBottom: '1px solid #e5e7eb',
+              }}
+            >
+              {contextMenu.item && favoriteReports.includes(contextMenu.item.path) ? 'Remove from Quick Access' : 'Add to Quick Access'}
+            </button>
+          )}
           <button
             onClick={() => openDialog('moveItem', contextMenu.item!)}
             style={{

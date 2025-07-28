@@ -17,6 +17,31 @@ function App() {
   const [activeTab, setActiveTab] = useState<"browse" | "settings">("browse")
   const [activeSettingsSubTab, setActiveSettingsSubTab] = useState<"globalSecurity" | "serverConfig" | "dataSources" | "auditLogs">("globalSecurity")
 
+  // State for favorited reports (quick access)
+  const [favoriteReports, setFavoriteReports] = useState<string[]>(() => {
+    // Try to load from localStorage for persistence
+    try {
+      const stored = localStorage.getItem("favoriteReports")
+      return stored ? JSON.parse(stored) : []
+    } catch {
+      return []
+    }
+  })
+
+  // Persist favoriteReports to localStorage
+  useEffect(() => {
+    localStorage.setItem("favoriteReports", JSON.stringify(favoriteReports))
+  }, [favoriteReports])
+
+  // Add/remove favorite
+  const toggleFavoriteReport = (reportPath: string) => {
+    setFavoriteReports((prev) =>
+      prev.includes(reportPath)
+        ? prev.filter((p) => p !== reportPath)
+        : [...prev, reportPath]
+    )
+  }
+
   // State for System Policies
   const [systemPolicies, setSystemPolicies] = useState<PolicyInfo[]>([])
   const [systemRoles, setSystemRoles] = useState<RoleInfo[]>([])
@@ -191,6 +216,73 @@ function App() {
             boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
           }}
         >
+          {/* Quick Access / Favorites Section */}
+          {favoriteReports.length > 0 && (
+            <div style={{ margin: 16, marginBottom: 0, padding: "6px 0 2px 0" }}>
+              <div style={{ fontWeight: 500, fontSize: 13, color: "#475569", marginBottom: 4, letterSpacing: 0.2 }}>Quick Access</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {favoriteReports.map((reportPath) => (
+                  <div
+                    key={reportPath}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      width: "100%",
+                      background: "#fff",
+                      border: "1px solid #e0e3e7",
+                      borderRadius: 6,
+                      padding: "10px 12px",
+                      fontSize: 14,
+                      color: "#1e293b",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      transition: "background 0.15s, border 0.15s",
+                      position: "relative"
+                    }}
+                    onMouseOver={e => {
+                      e.currentTarget.style.background = "#f0f9ff"
+                      e.currentTarget.style.borderColor = "#0ea5e9"
+                    }}
+                    onMouseOut={e => {
+                      e.currentTarget.style.background = "#fff"
+                      e.currentTarget.style.borderColor = "#e0e3e7"
+                    }}
+                  >
+                    <span
+                      style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", cursor: "pointer" }}
+                      title={reportPath}
+                      onClick={() => {
+                        setSelectedReport(reportPath)
+                        setCurrentPath(reportPath.substring(0, reportPath.lastIndexOf("/")) || "/")
+                      }}
+                    >
+                      {reportPath.split("/").pop()}
+                    </span>
+                    <button
+                      onClick={() => toggleFavoriteReport(reportPath)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 0,
+                        marginLeft: 6,
+                        display: "flex",
+                        alignItems: "center",
+                        color: "#64748b"
+                      }}
+                      title="Remove from Quick Access"
+                    >
+                      <X style={{ height: 16, width: 16 }} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <SidebarNavigation selectedPath={currentPath} onPathChange={setCurrentPath} />
         </aside>
 
@@ -262,6 +354,8 @@ function App() {
                   onPathChange={setCurrentPath} 
                   onReportSelect={setSelectedReport} 
                   selectedReport={selectedReport} 
+                  favoriteReports={favoriteReports}
+                  onToggleFavorite={toggleFavoriteReport}
                 />
               </div>
               {selectedReport && (

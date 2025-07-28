@@ -198,7 +198,7 @@ export const ReportPanel: React.FC<ReportPanelProps> = ({ reportPath }) => {
                 marginTop: 8,
                 width: "100%",
                 opacity: isRendering || !allParamsFilled ? 0.7 : 1,
-                boxShadow: !allParamsFilled ? "0 0 0 2px #fca5a5" : undefined,
+                boxShadow: !allParamsFilled ? "0 0 0 2px #bebabaff" : undefined,
                 transition: "box-shadow 0.2s, background 0.2s, color 0.2s, opacity 0.2s"
               }}
             >
