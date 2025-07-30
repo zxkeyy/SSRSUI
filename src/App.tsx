@@ -188,19 +188,7 @@ function App() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button
-              className="hamburger"
-              onClick={toggleSidebar}
-              style={{
-                background: "none",
-                border: "none",
-                cursor: "pointer",
-                padding: "4px",
-                display: "none",
-              }}
-            >
-              <Menu style={{ height: "20px", width: "20px", color: "#0f172a" }} />
-            </button>
+            
             <div>
               <h1
                 style={{
@@ -217,6 +205,19 @@ function App() {
                 SQL Server Reporting Services
               </span>
             </div>
+            <button
+              className="hamburger"
+              onClick={toggleSidebar}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px",
+                display: "none",
+              }}
+            >
+              <Menu style={{ height: "20px", width: "20px", color: "#0f172a" }} />
+            </button>
           </div>
           <div
             style={{
