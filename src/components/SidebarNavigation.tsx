@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from "react"
@@ -9,7 +8,6 @@ interface SidebarNavigationProps {
   selectedPath: string
   onPathChange: (path: string) => void
 }
-
 
 // Recursive folder tree item
 const FolderTreeItem: React.FC<{
@@ -29,7 +27,7 @@ const FolderTreeItem: React.FC<{
       <div
         style={{
           cursor: "pointer",
-          padding: "7px 10px",
+          padding: "6px 8px",
           borderRadius: "4px",
           transition: "all 0.2s ease",
           backgroundColor: isSelected ? "#e8f0fe" : "transparent",
@@ -37,10 +35,10 @@ const FolderTreeItem: React.FC<{
           color: isSelected ? "#2563eb" : "#334155",
           fontWeight: isSelected ? 600 : 400,
           marginBottom: "1px",
-          fontSize: "13px",
+          fontSize: "12px",
           display: "flex",
           alignItems: "center",
-          marginLeft: level * 14,
+          marginLeft: `${level * 12}px`,
         }}
         onClick={() => onPathChange(path)}
         onDoubleClick={() => hasChildren && setExpanded((v) => !v)}
@@ -59,19 +57,19 @@ const FolderTreeItem: React.FC<{
       >
         {hasChildren ? (
           expanded ? (
-            <ChevronDown style={{ marginRight: 4, height: 15, width: 15, color: "#64748b" }} onClick={e => { e.stopPropagation(); setExpanded(false); }} />
+            <ChevronDown style={{ marginRight: 4, height: 14, width: 14, color: "#64748b" }} onClick={e => { e.stopPropagation(); setExpanded(false); }} />
           ) : (
-            <ChevronRight style={{ marginRight: 4, height: 15, width: 15, color: "#64748b" }} onClick={e => { e.stopPropagation(); setExpanded(true); }} />
+            <ChevronRight style={{ marginRight: 4, height: 14, width: 14, color: "#64748b" }} onClick={e => { e.stopPropagation(); setExpanded(true); }} />
           )
         ) : (
-          <Dot style={{ marginRight: 4, height: 15, width: 15, color: "#64748b" }} />
+          <Dot style={{ marginRight: 4, height: 14, width: 14, color: "#64748b" }} />
         )}
         {path === "/" ? (
-          <Home style={{ marginRight: 8, height: 15, width: 15, color: "#64748b" }} />
+          <Home style={{ marginRight: 6, height: 14, width: 14, color: "#64748b" }} />
         ) : (
-          <Folder style={{ marginRight: 8, height: 15, width: 15, color: "#94a3b8" }} />
+          <Folder style={{ marginRight: 6, height: 14, width: 14, color: "#94a3b8" }} />
         )}
-        <span>{name}</span>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
       </div>
       {expanded && hasChildren && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
@@ -102,21 +100,23 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ selectedPa
         background: "transparent",
         padding: 0,
         transition: "all 0.2s ease",
+        width: "100%",
+        overflowY: "auto",
       }}
     >
-      <div style={{ padding: "14px 8px 8px 8px" }}>
+      <div style={{ padding: "12px 6px 6px 6px" }}>
         <h3
           style={{
-            fontSize: "15px",
+            fontSize: "14px",
             fontWeight: 600,
             color: "#1e293b",
-            marginBottom: "8px",
+            marginBottom: "6px",
             display: "flex",
             alignItems: "center",
             letterSpacing: "-0.01em",
           }}
         >
-          <FolderOpen style={{ marginRight: "7px", height: "17px", width: "17px", color: "#64748b" }} />
+          <FolderOpen style={{ marginRight: "6px", height: "16px", width: "16px", color: "#64748b" }} />
           Report Folders
         </h3>
         <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
@@ -128,6 +128,33 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({ selectedPa
           />
         </div>
       </div>
+      <style>
+        {`
+          @media (max-width: 768px) {
+            div[style*="padding: 12px 6px 6px 6px"] {
+              padding: 8px 4px 4px 4px;
+            }
+            h3[style*="font-size: 14px"] {
+              font-size: 13px;
+            }
+            div[style*="height: 16px"] {
+              height: 14px;
+              width: 14px;
+            }
+            div[style*="padding: 6px 8px"] {
+              padding: 4px 6px;
+              font-size: 11px;
+            }
+            div[style*="height: 14px"] {
+              height: 12px;
+              width: 12px;
+            }
+            div[style*="margin-left"] {
+              margin-left: 10px;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 };
